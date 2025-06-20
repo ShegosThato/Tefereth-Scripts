@@ -6,7 +6,7 @@ import { BottomNavigationBar } from '@/components/app/BottomNavigationBar';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'StorySpark: AI Video Producer',
+  title: 'Tefereth Scripts',
   description: 'AI-powered video creation from your stories.',
 };
 

@@ -8,13 +8,13 @@ export function AppHeader() {
   return (
     <header className="bg-card/95 text-card-foreground p-4 shadow-lg sticky top-0 z-50 border-b backdrop-blur-sm">
       <div className="container mx-auto flex items-center justify-between">
-        <Link 
-          href="/" 
-          className="flex items-center gap-2.5 text-2xl font-headline font-bold text-primary hover:text-primary/80 transition-colors duration-200" 
-          aria-label="StorySpark Home"
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 text-2xl font-headline font-bold text-primary hover:text-primary/80 transition-colors duration-200 group"
+          aria-label="Tefereth Scripts Home"
         >
           <Sparkles className="h-8 w-8 text-primary transition-transform duration-300 group-hover:rotate-12" />
-          <span className="drop-shadow-sm">StorySpark</span>
+          <span className="drop-shadow-sm">Tefereth Scripts</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
           <nav className="hidden md:flex items-center gap-1">
@@ -25,7 +25,7 @@ export function AppHeader() {
               <Link href="/library">Library</Link>
             </Button>
           </nav>
-          <ThemeToggle /> 
+          <ThemeToggle />
         </div>
       </div>
     </header>

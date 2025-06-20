@@ -1,8 +1,9 @@
+
 'use client'; // Required for localStorage access
 
 import type { Project } from './types';
 
-const PROJECTS_STORAGE_KEY = 'storySparkProjects';
+const PROJECTS_STORAGE_KEY = 'teferethScriptsProjects';
 
 function getProjectsFromStorage(): Project[] {
   if (typeof window === 'undefined') return [];
