@@ -8,8 +8,6 @@ import {
   deleteProjectFromFirestore,
 } from '@/lib/firestore-service';
 import type { Project, ProjectData } from '@/lib/types';
-import { getAuth } from '@clerk/nextjs/server';
-import { useAuth } from '@clerk/nextjs';
 
 interface ProjectState {
   projects: Project[];
@@ -17,34 +15,24 @@ interface ProjectState {
   isLoading: boolean;
   error: string | null;
   setLoading: (isLoading: boolean) => void;
-  fetchAllProjects: () => Promise<void>;
-  fetchProject: (projectId: string) => Promise<void>;
-  addProject: (projectData: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string | null>;
+  fetchAllProjects: (userId: string) => Promise<void>;
+  fetchProject: (projectId: string, userId: string) => Promise<void>;
+  addProject: (projectData: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, userId: string) => Promise<string | null>;
   updateCurrentProject: (updates: Partial<ProjectData>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
-}
-
-const getCurrentUserId = () => {
-    // This is a bit of a workaround to get the user ID in a client-side store.
-    // We rely on the `useAuth` hook in the components to provide the user context.
-    // A more robust solution might involve passing userId to every store action.
-    // For this app's scale, we'll get it from the clerk singleton when needed.
-    const { userId } = useAuth.getState();
-    return userId;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   currentProject: null,
-  isLoading: false,
+  isLoading: true, // Start with loading true for initial fetch
   error: null,
 
   setLoading: (isLoading) => set({ isLoading }),
 
-  fetchAllProjects: async () => {
-    const userId = getCurrentUserId();
+  fetchAllProjects: async (userId) => {
     if (!userId) {
-        set({ error: "User not authenticated." });
+        set({ error: "User not authenticated.", isLoading: false, projects: [] });
         return;
     }
     set({ isLoading: true, error: null });
@@ -57,11 +45,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
-  fetchProject: async (projectId) => {
+  fetchProject: async (projectId, userId) => {
     set({ isLoading: true, error: null, currentProject: null });
+    if (!userId) {
+        set({ error: "User not authenticated.", isLoading: false });
+        return;
+    }
     try {
       const project = await getProjectFromFirestore(projectId);
-       const userId = getCurrentUserId();
       // Security check: ensure the fetched project belongs to the current user.
       if (project && project.userId === userId) {
           set({ currentProject: project, isLoading: false });
@@ -74,8 +65,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
-  addProject: async (projectData) => {
-    const userId = getCurrentUserId();
+  addProject: async (projectData, userId) => {
     if (!userId) {
         set({ error: "User not authenticated." });
         return null;
@@ -85,7 +75,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const newProjectId = await createProjectInFirestore(projectData, userId);
       // After adding, we could either refetch all or just add to the local state.
       // Refetching is simpler and ensures data consistency.
-      await get().fetchAllProjects(); 
+      await get().fetchAllProjects(userId); 
       set({ isLoading: false });
       return newProjectId;
     } catch (err) {
@@ -99,21 +89,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { currentProject } = get();
     if (!currentProject) return;
 
-    set({ isLoading: true, error: null });
+    // No need to set loading for this optimistic update, feels faster
+    // set({ isLoading: true, error: null }); 
     try {
-      await updateProjectInFirestore(currentProject.id, updates);
       // Optimistically update the local state
       const updatedProject = { ...currentProject, ...updates, updatedAt: new Date().toISOString() };
-      set({ currentProject: updatedProject, isLoading: false });
+      set({ currentProject: updatedProject });
 
       // also update the project in the main list
       set(state => ({
           projects: state.projects.map(p => p.id === updatedProject.id ? updatedProject : p)
-      }))
+      }));
+
+      // Await the firestore update in the background
+      await updateProjectInFirestore(currentProject.id, updates);
 
     } catch (err) {
       console.error(`Error updating project ${currentProject.id}:`, err);
       set({ error: 'Failed to update project.', isLoading: false });
+       // Optionally revert the optimistic update here
+      set({ currentProject });
     }
   },
 

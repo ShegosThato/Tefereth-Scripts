@@ -1,3 +1,4 @@
+
 import { db } from './firebase-config';
 import {
   collection,
@@ -11,6 +12,7 @@ import {
   where,
   Timestamp,
   serverTimestamp,
+  orderBy,
 } from 'firebase/firestore';
 import type { Project, ProjectData } from './types';
 
@@ -38,7 +40,11 @@ export async function createProjectInFirestore(projectData: Omit<ProjectData, 'i
 }
 
 export async function getProjectsForUser(userId: string): Promise<Project[]> {
-  const q = query(collection(db, PROJECTS_COLLECTION), where('userId', '==', userId));
+  const q = query(
+    collection(db, PROJECTS_COLLECTION), 
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc') // Sorting is now done by Firestore
+  );
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
@@ -47,7 +53,7 @@ export async function getProjectsForUser(userId: string): Promise<Project[]> {
       ...convertTimestamps(doc.data()),
     } as Project);
   });
-  return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return projects;
 }
 
 export async function getProjectFromFirestore(projectId: string): Promise<Project | null> {
