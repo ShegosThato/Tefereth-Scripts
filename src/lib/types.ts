@@ -1,6 +1,5 @@
 
 import type { AnalyzeStoryOutput } from '@/ai/flows/analyze-story';
-import type { GenerateStoryboardOutput as AIStoryboardOutput } from '@/ai/flows/generate-storyboard'; 
 import type { GenerateScenesOutput as AIGeneratedScenesOutput } from '@/ai/flows/generate-scenes';
 
 
@@ -8,16 +7,10 @@ export type StoryAnalysis = AnalyzeStoryOutput;
 
 export interface Scene {
   sceneDescription: string;
-  imageUrl?: string;
-  storyboardImageUri?: string;
+  imageUrl: string;
 }
 
-export type StoryboardScene = {
-  sceneDescription: string;
-  imageUri: string;
-};
-
-export type StoryboardOutput = StoryboardScene[];
+export type Storyboard = string[];
 
 export type GeneratedAIScenes = AIGeneratedScenesOutput['scenes'];
 
@@ -28,7 +21,7 @@ export interface ProjectData {
   title: string;
   storyText: string;
   analysis?: StoryAnalysis;
-  storyboard?: StoryboardOutput;
+  storyboard?: Storyboard;
   visualStyle?: string;
   generatedScenes?: Scene[];
   videoUrl?: string; 

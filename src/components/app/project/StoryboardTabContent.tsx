@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Scene, StoryboardScene } from '@/lib/types';
+import type { Scene, Storyboard } from '@/lib/types';
 import { visualStyles } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -53,8 +53,8 @@ export function StoryboardTabContent() {
         userPrompts: `Generate a storyboard for the story titled "${project.title}". Focus on key visual moments.`,
       };
       const storyboardResult = await generateStoryboard(input);
-      await updateCurrentProject({ storyboard: storyboardResult });
-      toast({ title: "Storyboard Generated!", description: "AI has created a visual storyboard." });
+      await updateCurrentProject({ storyboard: storyboardResult, generatedScenes: [] }); // Clear old scenes
+      toast({ title: "Storyboard Generated!", description: "AI has created scene descriptions." });
     } catch (error) {
       console.error("Error generating storyboard:", error);
       toast({ title: "Storyboard Error", description: "Failed to generate storyboard. Check console for details.", variant: "destructive" });
@@ -87,19 +87,12 @@ export function StoryboardTabContent() {
     setIsGeneratingScenes(true);
     setLoading(true);
     try {
-      const storyboardDescription = project.storyboard.map(s => s.sceneDescription).join('\n');
       const input: GenerateScenesInput = {
-        storyboardDescription,
+        storyboard: project.storyboard,
         visualStyle: style.promptFragment,
       };
       const generatedScenesResult = await generateScenes(input);
-      
-      const appScenes: Scene[] = generatedScenesResult.scenes.map(aiScene => ({
-        sceneDescription: aiScene.sceneDescription,
-        imageUrl: aiScene.imageUrl, 
-      }));
-
-      await updateCurrentProject({ generatedScenes: appScenes });
+      await updateCurrentProject({ generatedScenes: generatedScenesResult.scenes });
       toast({ title: "Scenes Generated!", description: "AI has created visual scenes for your storyboard." });
     } catch (error) {
       console.error("Error generating scenes:", error);
@@ -113,7 +106,7 @@ export function StoryboardTabContent() {
   const handleDescriptionSave = async (index: number, newDescription: string, type: 'storyboard' | 'generated') => {
     if (type === 'storyboard' && project.storyboard) {
       const updatedStoryboard = [...project.storyboard];
-      updatedStoryboard[index].sceneDescription = newDescription;
+      updatedStoryboard[index] = newDescription;
       await updateCurrentProject({ storyboard: updatedStoryboard });
     } else if (type === 'generated' && project.generatedScenes) {
       const updatedScenes = [...project.generatedScenes];
@@ -135,16 +128,13 @@ export function StoryboardTabContent() {
     try {
         const sceneToRegen = project.generatedScenes[index];
         const input: GenerateScenesInput = {
-            storyboardDescription: sceneToRegen.sceneDescription,
+            storyboard: [sceneToRegen.sceneDescription], // Send only the specific description
             visualStyle: style.promptFragment,
         };
         const result = await generateScenes(input);
         if (result.scenes && result.scenes.length > 0) {
             const updatedScenes = [...project.generatedScenes];
-            updatedScenes[index] = {
-              sceneDescription: result.scenes[0].sceneDescription,
-              imageUrl: result.scenes[0].imageUrl,
-            };
+            updatedScenes[index] = result.scenes[0];
             await updateCurrentProject({ generatedScenes: updatedScenes });
             toast({ title: "Scene Regenerated", description: `Scene ${index + 1} has been updated with a new image.`});
         }
@@ -159,21 +149,22 @@ export function StoryboardTabContent() {
   function handleDragEnd(event: DragEndEvent, type: 'storyboard' | 'generated') {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-        const items = type === 'storyboard' ? project.storyboard : project.generatedScenes;
-        if (!items) return;
-        
-        const oldIndex = items.findIndex((item, i) => (item.sceneDescription + i) === active.id);
-        const newIndex = items.findIndex((item, i) => (item.sceneDescription + i) === over.id);
+      const items = type === 'storyboard' ? project.storyboard : project.generatedScenes;
+      if (!items) return;
+      
+      const oldIndex = items.findIndex((item, i) => (typeof item === 'string' ? item + i : item.sceneDescription + i) === active.id);
+      const newIndex = items.findIndex((item, i) => (typeof item === 'string' ? item + i : item.sceneDescription + i) === over.id);
 
-        const newOrder = arrayMove(items, oldIndex, newIndex);
-        if (type === 'storyboard') {
-            updateCurrentProject({ storyboard: newOrder as StoryboardScene[] });
-        } else {
-            updateCurrentProject({ generatedScenes: newOrder as Scene[] });
-        }
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const newOrder = arrayMove(items, oldIndex, newIndex);
+      if (type === 'storyboard') {
+          updateCurrentProject({ storyboard: newOrder as Storyboard });
+      } else {
+          updateCurrentProject({ generatedScenes: newOrder as Scene[] });
+      }
     }
   }
-
 
   const currentStoryboard = project.storyboard || [];
   const currentGeneratedScenes = project.generatedScenes || [];
@@ -189,8 +180,8 @@ export function StoryboardTabContent() {
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {currentStoryboard.length > 0
-              ? `Your storyboard has ${currentStoryboard.length} scenes. You can regenerate it, edit descriptions, or drag to reorder.`
-              : "Let AI create a visual storyboard from your story analysis."}
+              ? `Your storyboard has ${currentStoryboard.length} scene descriptions. You can regenerate, edit, or drag to reorder them.`
+              : "Let AI create scene descriptions from your story analysis."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -208,12 +199,13 @@ export function StoryboardTabContent() {
             <div className="mt-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
               <h3 className="text-xl font-semibold mb-4 text-foreground">Storyboard Scenes ({currentStoryboard.length}):</h3>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, 'storyboard')}>
-                <SortableContext items={currentStoryboard.map((s, i) => s.sceneDescription + i)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={currentStoryboard.map((desc, i) => desc + i)} strategy={verticalListSortingStrategy}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {currentStoryboard.map((scene, index) => (
+                        {currentStoryboard.map((description, index) => (
                           <SceneCard 
                             key={`storyboard-${project.id}-${index}`} 
-                            scene={scene} 
+                            id={description + index}
+                            description={description}
                             index={index} 
                             type="storyboard"
                             onDescriptionSave={(desc) => handleDescriptionSave(index, desc, 'storyboard')}
@@ -288,7 +280,9 @@ export function StoryboardTabContent() {
                         {currentGeneratedScenes.map((scene, index) => (
                           <SceneCard 
                             key={`generated-${project.id}-${index}`} 
-                            scene={scene} 
+                            id={scene.sceneDescription + index}
+                            description={scene.sceneDescription}
+                            imageUrl={scene.imageUrl}
                             index={index} 
                             type="generated"
                             onDescriptionSave={(desc) => handleDescriptionSave(index, desc, 'generated')}

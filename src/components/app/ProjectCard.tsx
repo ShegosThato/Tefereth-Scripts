@@ -24,8 +24,8 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   };
   
   const status = getProjectStatus();
-  const coverImage = project.generatedScenes?.[0]?.imageUrl || project.storyboard?.[0]?.imageUri || "https://placehold.co/600x375.png";
-  const coverImageHint = project.generatedScenes?.[0]?.imageUrl ? "scene visual" : project.storyboard?.[0]?.imageUri ? "storyboard art" : "abstract project";
+  const coverImage = project.generatedScenes?.[0]?.imageUrl || "https://placehold.co/600x375.png";
+  const coverImageHint = project.generatedScenes?.[0]?.imageUrl ? "scene visual" : "abstract project";
 
   return (
     <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out bg-card border-border group transform hover:-translate-y-1">

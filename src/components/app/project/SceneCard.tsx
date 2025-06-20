@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import type { Scene, StoryboardScene } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,28 +12,38 @@ import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 
 interface SceneCardProps {
-  scene: Scene | StoryboardScene;
+  id: string; // Unique ID for dnd-kit
+  description: string;
+  imageUrl?: string;
   index: number;
-  type?: 'storyboard' | 'generated';
+  type: 'storyboard' | 'generated';
   onDescriptionSave: (newDescription: string) => void;
   onRegenerate: () => void;
   isSorting?: boolean;
 }
 
-export function SceneCard({ scene, index, type = 'storyboard', onDescriptionSave, onRegenerate, isSorting = false }: SceneCardProps) {
+export function SceneCard({ 
+  id,
+  description: initialDescription, 
+  imageUrl,
+  index, 
+  type, 
+  onDescriptionSave, 
+  onRegenerate,
+  isSorting = false 
+}: SceneCardProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [description, setDescription] = useState(scene.sceneDescription);
+  const [description, setDescription] = useState(initialDescription);
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: scene.sceneDescription + index });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 10 : 'auto',
   };
-
-  const imageUrl = 'imageUrl' in scene ? scene.imageUrl : scene.imageUri;
-  const altText = `Visual for scene ${index + 1}: ${scene.sceneDescription.substring(0, 50)}...`;
+  
+  const altText = `Visual for scene ${index + 1}: ${description.substring(0, 50)}...`;
   const dataAiHintForPlaceholder = type === 'storyboard' ? "storyboard frame" : "generated scene";
 
   const handleSave = () => {
@@ -43,7 +52,7 @@ export function SceneCard({ scene, index, type = 'storyboard', onDescriptionSave
   };
 
   const handleCancel = () => {
-    setDescription(scene.sceneDescription);
+    setDescription(initialDescription);
     setIsEditing(false);
   };
 
@@ -68,7 +77,7 @@ export function SceneCard({ scene, index, type = 'storyboard', onDescriptionSave
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4">
             <ImageIcon className="h-12 w-12 mb-2 opacity-30 group-hover:opacity-50 transition-opacity" />
-            <p className="text-xs text-center">No image available for this scene.</p>
+            <p className="text-xs text-center">{type === 'storyboard' ? 'Description-only scene' : 'No image available.'}</p>
              <Image 
                 src={`https://placehold.co/400x225.png`} 
                 alt="Placeholder image for scene" 
@@ -92,8 +101,8 @@ export function SceneCard({ scene, index, type = 'storyboard', onDescriptionSave
                 {...attributes}
                 {...listeners}
                 aria-label="Drag to reorder scene"
-                className={cn("h-8 w-8 flex items-center justify-center bg-black/50 hover:bg-black/80 text-white hover:text-primary backdrop-blur-sm rounded-md cursor-grab active:cursor-grabbing",
-                  isSorting ? "cursor-grab" : "cursor-not-allowed opacity-50"
+                className={cn("h-8 w-8 flex items-center justify-center bg-black/50 hover:bg-black/80 text-white hover:text-primary backdrop-blur-sm rounded-md",
+                  isSorting ? "cursor-grab active:cursor-grabbing" : "cursor-not-allowed opacity-50"
                 )}
                 disabled={!isSorting}
               >
@@ -118,7 +127,7 @@ export function SceneCard({ scene, index, type = 'storyboard', onDescriptionSave
             </div>
         ) : (
             <p className="text-sm line-clamp-3 leading-relaxed cursor-pointer" title="Click to edit description">
-                {scene.sceneDescription || "No description for this scene."}
+                {initialDescription || "No description for this scene."}
             </p>
         )}
       </CardContent>
