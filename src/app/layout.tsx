@@ -4,8 +4,7 @@ import './globals.css';
 import { AppHeader } from '@/components/app/AppHeader';
 import { BottomNavigationBar } from '@/components/app/BottomNavigationBar';
 import { Toaster } from "@/components/ui/toaster";
-import { ClerkProvider } from '@clerk/nextjs'
-import { dark } from '@clerk/themes';
+import { ClerkProvider } from '@clerk/nextjs';
 
 export const metadata: Metadata = {
   title: 'Tefereth Scripts',
@@ -20,7 +19,6 @@ export default function RootLayout({
   return (
     <ClerkProvider
       appearance={{
-        baseTheme: [dark],
         variables: { 
           colorPrimary: 'hsl(0 84% 60%)',
           colorBackground: 'hsl(0 0% 8%)',

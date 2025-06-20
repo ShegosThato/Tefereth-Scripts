@@ -33,21 +33,6 @@ export async function generateScenes(input: GenerateScenesInput): Promise<Genera
   return generateScenesFlow(input);
 }
 
-const generateScenePrompt = ai.definePrompt({
-  name: 'generateScenePrompt',
-  input: {schema: z.object({sceneDescription: z.string(), visualStyle: z.string()})},
-  output: {schema: SceneSchema},
-  prompt: `You are an AI video creator who creates scenes for a video based on the storyboard.
-
-  Based on the scene description and visual style, create a unique image for the scene.
-
-  Scene Description: {{{sceneDescription}}}
-  Visual Style: {{{visualStyle}}}
-
-  Ensure the image is consistent with the visual style.
-  Return the URL of the generated image and scene description in the correct JSON format.`,
-});
-
 const generateScenesFlow = ai.defineFlow(
   {
     name: 'generateScenesFlow',
@@ -55,41 +40,42 @@ const generateScenesFlow = ai.defineFlow(
     outputSchema: GenerateScenesOutputSchema,
   },
   async input => {
-    const sceneDescriptions = input.storyboardDescription.split('\n');
-    const scenes: SceneSchema[] = [];
+    const sceneDescriptions = input.storyboardDescription
+      .split('\n')
+      .map(desc => desc.trim())
+      .filter(desc => desc !== '');
 
-    for (const sceneDescription of sceneDescriptions) {
-      if (sceneDescription.trim() === '') {
-        continue;
-      }
-
-      const {output} = await generateScenePrompt({
-        sceneDescription: sceneDescription,
-        visualStyle: input.visualStyle,
-      });
-
-      if (output) {
-        // Generate image for the scene using Gemini 2.0 Flash experimental image generation
+    const scenePromises = sceneDescriptions.map(async sceneDescription => {
+      try {
+        // Generate image for the scene in parallel
         const {media} = await ai.generate({
-          model: 'googleai/gemini-2.0-flash-exp',
-          prompt: [
-            {text: `Generate an image of: ${sceneDescription}`},
-            {text: `In the style of: ${input.visualStyle}`},
-          ],
+          // IMPORTANT: Use the correct model for image generation.
+          model: 'googleai/gemini-2.0-flash-preview-image-generation',
+          prompt: `${sceneDescription}, in the style of ${input.visualStyle}`,
           config: {
+            // IMPORTANT: Both TEXT and IMAGE are required for this model.
             responseModalities: ['TEXT', 'IMAGE'],
           },
         });
 
         if (media?.url) {
-          scenes.push({
+          return {
             sceneDescription: sceneDescription,
             imageUrl: media.url,
-          });
+          };
         }
+      } catch (error) {
+        console.error(`Failed to generate image for scene: "${sceneDescription}"`, error);
       }
-    }
+      // Return null for failed generations so Promise.all doesn't reject early
+      return null;
+    });
 
-    return {scenes: scenes};
+    const generatedScenes = await Promise.all(scenePromises);
+
+    // Filter out any null results from failed generations
+    const successfulScenes = generatedScenes.filter((scene): scene is z.infer<typeof SceneSchema> => scene !== null);
+
+    return {scenes: successfulScenes};
   }
 );

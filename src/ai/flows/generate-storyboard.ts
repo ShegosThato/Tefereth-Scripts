@@ -34,7 +34,7 @@ const generateStoryboardPrompt = ai.definePrompt({
   name: 'generateStoryboardPrompt',
   input: {schema: GenerateStoryboardInputSchema},
   output: {schema: GenerateStoryboardOutputSchema},
-  prompt: `Based on the story analysis and user prompts, create a visual storyboard.
+  prompt: `Based on the story analysis and user prompts, create a visual storyboard with 3-5 key scenes.
 
 Story Analysis: {{{storyAnalysis}}}
 User Prompts: {{{userPrompts}}}
@@ -50,25 +50,15 @@ const generateStoryboardFlow = ai.defineFlow(
     outputSchema: GenerateStoryboardOutputSchema,
   },
   async input => {
-    const numScenes = 3; // Generate 3 scenes for the storyboard
-    const storyboardScenes: any[] = [];
+    // The prompt is designed to generate a series of scenes in one go.
+    const {output} = await generateStoryboardPrompt(input);
 
-    for (let i = 0; i < numScenes; i++) {
-      // Augment the user prompt with scene-specific details
-      const augmentedInput = {
-        ...input,
-        userPrompts: `${input.userPrompts} Scene ${i + 1}: Focus on a key moment.`, // adding scene details
-      };
-
-      const {output} = await generateStoryboardPrompt(augmentedInput);
-      if (output && Array.isArray(output)) {
-        storyboardScenes.push(...output);
-      } else {
-        console.warn("Unexpected output format from generateStoryboardPrompt:", output);
-        // Handle the unexpected output, e.g., by returning a default scene or throwing an error
-      }
+    if (output && Array.isArray(output)) {
+      return output as GenerateStoryboardOutput;
     }
-
-    return storyboardScenes as GenerateStoryboardOutput;
+    
+    // If the output is not a valid array, return an empty array.
+    console.warn("Unexpected or empty output from generateStoryboardPrompt:", output);
+    return [];
   }
 );
