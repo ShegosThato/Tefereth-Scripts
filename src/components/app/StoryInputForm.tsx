@@ -89,6 +89,7 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
          toast({ 
             title: "File Type Note", 
             description: `Selected "${file.name}". Auto-extraction for .txt/.md only. Paste other content manually.`,
+            variant: "default" // Changed to default variant for informational toast
         });
         form.setValue('storyText', ''); // Clear storyText as content isn't auto-read
       }
@@ -130,18 +131,20 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
             <FormField
               control={form.control}
               name="storyFile"
-              render={({ field }) => (
+              render={({ field: { onChange, value, ...restField }}) => ( // Destructure field to handle onChange correctly
                 <FormItem>
-                  <FormLabel className="text-lg font-semibold flex items-center gap-2">
+                  <FormLabel htmlFor="story-file-input" className="text-lg font-semibold flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
                     <UploadCloud className="h-6 w-6 text-primary" />
                     Upload Document (Optional)
                   </FormLabel>
                   <FormControl>
                      <Input 
+                        id="story-file-input"
                         type="file" 
                         ref={fileInputRef}
-                        onChange={(e) => field.onChange(e.target.files)}
-                        className="text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer h-12 pt-3"
+                        onChange={(e) => onChange(e.target.files)} // Use destructured onChange
+                        {...restField} // Pass rest of the field props
+                        className="text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer h-12 pt-3 focus-visible:ring-primary focus-visible:ring-offset-2"
                         accept=".txt,.md,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         aria-describedby="file-description"
                       />
@@ -150,9 +153,9 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
                     Supports .txt, .md (content auto-loaded), .pdf, .doc, .docx. Max 50,000 characters for auto-load.
                   </FormDescription>
                   {fileName && (
-                    <div className={cn("mt-2 text-sm flex items-center", fileReadSuccess ? "text-green-600" : "text-muted-foreground")}>
-                      {fileReadSuccess && <CheckCircle className="h-4 w-4 mr-2" />}
-                      Selected: {fileName} {fileReadSuccess && "(Content loaded)"}
+                    <div className={cn("mt-2 text-sm flex items-center", fileReadSuccess ? "text-green-600 dark:text-green-400" : "text-muted-foreground")}>
+                      {fileReadSuccess ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileText className="h-4 w-4 mr-2 opacity-70" />}
+                      Selected: <strong className="ml-1.5 mr-1">{fileName}</strong> {fileReadSuccess && "(Content loaded)"}
                     </div>
                   )}
                   <FormMessage />

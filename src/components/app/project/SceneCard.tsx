@@ -32,7 +32,15 @@ export function SceneCard({ scene, index, type = 'storyboard' }: SceneCardProps)
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4">
             <ImageIcon className="h-12 w-12 mb-2 opacity-50" />
             <p className="text-xs text-center">No image available for this scene.</p>
-             <Image src={`https://placehold.co/400x225.png`} alt="Placeholder" fill className="object-cover opacity-0" data-ai-hint={dataAiHintForPlaceholder} />
+             {/* Fallback image for layout and AI hint even if no specific imageUrl */}
+             <Image 
+                src={`https://placehold.co/400x225.png`} 
+                alt="Placeholder image for scene" 
+                fill 
+                className="object-cover opacity-0 pointer-events-none" // Invisible, for layout and AI hint only
+                data-ai-hint={dataAiHintForPlaceholder} 
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
           </div>
         )}
          <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">

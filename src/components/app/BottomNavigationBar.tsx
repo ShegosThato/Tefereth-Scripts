@@ -26,7 +26,7 @@ export function BottomNavigationBar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center p-2 flex-1 rounded-none transition-all duration-200 ease-in-out", // flex-1 for equal width, rounded-none
+                "flex flex-col items-center justify-center p-2 flex-1 rounded-none transition-all duration-200 ease-in-out relative group",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isActive 
                   ? "text-primary bg-primary/10" // More prominent active state
@@ -36,6 +36,9 @@ export function BottomNavigationBar() {
             >
               <item.icon className={cn("h-6 w-6 mb-0.5 transition-transform", isActive && "scale-110")} aria-hidden="true" />
               <span className="text-xs font-medium">{item.label}</span>
+              {isActive && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-b-full transition-all duration-300"></div>
+              )}
             </Link>
           );
         })}

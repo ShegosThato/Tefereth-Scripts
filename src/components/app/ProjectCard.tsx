@@ -24,7 +24,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   };
   
   const status = getProjectStatus();
-  const coverImage = project.generatedScenes?.[0]?.imageUrl || project.storyboard?.[0]?.imageUri || "https://placehold.co/600x400.png";
+  const coverImage = project.generatedScenes?.[0]?.imageUrl || project.storyboard?.[0]?.imageUri || "https://placehold.co/600x375.png";
   const coverImageHint = project.generatedScenes?.[0]?.imageUrl ? "scene visual" : project.storyboard?.[0]?.imageUri ? "storyboard art" : "abstract project";
 
   return (
@@ -39,6 +39,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
               height={375} // Adjusted for 16:10 aspect ratio
               className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300 ease-in-out"
               data-ai-hint={coverImageHint}
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, (max-width: 1536px) 33vw, 25vw"
             />
           </div>
         </Link>

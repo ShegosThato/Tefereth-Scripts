@@ -28,14 +28,15 @@ export function VisualStyleSelector({ selectedStyleId, onSelectStyle }: VisualSt
               )}
               role="radio"
               aria-checked={selectedStyleId === style.id}
-              tabIndex={0}
+              tabIndex={0} // Ensure it's focusable
+              aria-label={`Select visual style: ${style.name}`}
             >
               <div className="aspect-video w-full overflow-hidden rounded-md mb-2 relative bg-muted/50">
                  <Image
                     src={style.previewImageUrl}
                     alt={style.name}
                     fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 15vw" // Adjusted sizes
                     className="object-cover group-hover:scale-110 transition-transform duration-300 ease-in-out"
                     data-ai-hint={style.dataAiHint}
                   />

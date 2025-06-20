@@ -104,15 +104,26 @@ export default function ProjectPage() {
                   className="text-2xl font-bold font-headline h-11 flex-grow"
                   onKeyDown={(e) => {
                       if (e.key === 'Enter') handleTitleSave();
-                      if (e.key === 'Escape') setIsEditingTitle(false);
+                      if (e.key === 'Escape') {
+                        setEditableTitle(project.title); // Reset to original on escape
+                        setIsEditingTitle(false);
+                      }
+                  }}
+                  onBlur={() => { // Save on blur if changed, or revert
+                    if (editableTitle.trim() !== '' && editableTitle.trim() !== project.title) {
+                        handleTitleSave();
+                    } else {
+                        setEditableTitle(project.title); // Revert if empty or unchanged
+                        setIsEditingTitle(false);
+                    }
                   }}
                   autoFocus
                   aria-label="Edit project title"
                 />
-                <Button onClick={handleTitleSave} size="icon" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-800" aria-label="Save title">
+                <Button onClick={handleTitleSave} size="icon" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-800 shrink-0" aria-label="Save title">
                     <Check className="h-5 w-5" />
                 </Button>
-                 <Button onClick={() => setIsEditingTitle(false)} size="icon" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-800" aria-label="Cancel title edit">
+                 <Button onClick={() => { setEditableTitle(project.title); setIsEditingTitle(false); }} size="icon" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-800 shrink-0" aria-label="Cancel title edit">
                     <X className="h-5 w-5" />
                 </Button>
               </div>
@@ -126,7 +137,7 @@ export default function ProjectPage() {
             )}
         </div>
         <div className="flex gap-2 shrink-0 self-start sm:self-center">
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-destructive-foreground bg-destructive hover:bg-destructive/90 border-destructive hover:border-destructive/90">
+            <Button variant="destructive_outline" onClick={() => setShowDeleteConfirm(true)} > {/* Use new variant if defined, or adjust classes */}
                 <Trash2 className="mr-2 h-4 w-4" /> Delete Project
             </Button>
         </div>
