@@ -6,22 +6,22 @@ import { ThemeToggle } from './ThemeToggle';
 
 export function AppHeader() {
   return (
-    <header className="bg-card text-card-foreground p-4 shadow-md sticky top-0 z-50 border-b">
+    <header className="bg-card/95 text-card-foreground p-4 shadow-lg sticky top-0 z-50 border-b backdrop-blur-sm">
       <div className="container mx-auto flex items-center justify-between">
         <Link 
           href="/" 
-          className="flex items-center gap-2 text-2xl font-headline font-bold text-primary hover:text-primary/90 transition-colors" 
+          className="flex items-center gap-2.5 text-2xl font-headline font-bold text-primary hover:text-primary/80 transition-colors duration-200" 
           aria-label="StorySpark Home"
         >
-          <Sparkles className="h-8 w-8 text-primary" />
-          StorySpark
+          <Sparkles className="h-8 w-8 text-primary transition-transform duration-300 group-hover:rotate-12" />
+          <span className="drop-shadow-sm">StorySpark</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <nav className="hidden md:flex items-center gap-1">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="font-medium hover:text-primary">
               <Link href="/">New Story</Link>
             </Button>
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="font-medium hover:text-primary">
               <Link href="/library">Library</Link>
             </Button>
           </nav>

@@ -13,10 +13,10 @@ interface AnalysisTabContentProps {
 export function AnalysisTabContent({ project }: AnalysisTabContentProps) {
   if (!project.analysis) {
     return (
-      <Card className="shadow-lg border-border">
+      <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center text-2xl font-headline">
-            <AlertCircle className="mr-3 h-7 w-7 text-destructive" />
+            <AlertCircle className="mr-3 h-7 w-7 text-destructive animate-pulse" />
             Story Analysis Not Available
           </CardTitle>
           <CardDescription>The AI analysis of your story could not be loaded or has not been performed yet.</CardDescription>
@@ -35,7 +35,7 @@ export function AnalysisTabContent({ project }: AnalysisTabContentProps) {
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-lg border-border">
+      <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center text-2xl font-headline">
             <FileText className="mr-3 h-7 w-7 text-primary" />
@@ -48,7 +48,7 @@ export function AnalysisTabContent({ project }: AnalysisTabContentProps) {
       </Card>
 
       <div className="grid md:grid-cols-2 gap-8">
-        <Card className="shadow-lg border-border">
+        <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center text-xl font-headline">
               <Lightbulb className="mr-2 h-6 w-6 text-primary" />
@@ -57,14 +57,14 @@ export function AnalysisTabContent({ project }: AnalysisTabContentProps) {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             {themes && themes.length > 0 ? themes.map((theme, index) => (
-              <Badge key={index} variant="secondary" className="text-sm px-3 py-1.5 bg-secondary/70 hover:bg-secondary">
+              <Badge key={index} variant="secondary" className="text-sm px-3 py-1.5 bg-secondary/80 hover:bg-secondary transition-colors duration-150 ease-in-out shadow-sm">
                 {theme}
               </Badge>
             )) : <p className="text-sm text-muted-foreground">No themes identified.</p>}
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-border">
+        <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center text-xl font-headline">
               <Users className="mr-2 h-6 w-6 text-primary" />
@@ -79,7 +79,7 @@ export function AnalysisTabContent({ project }: AnalysisTabContentProps) {
         </Card>
       </div>
 
-      <Card className="shadow-lg border-border">
+      <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center text-xl font-headline">
             <Workflow className="mr-2 h-6 w-6 text-primary" />

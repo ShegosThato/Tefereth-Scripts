@@ -88,10 +88,10 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b">
+    <div className="space-y-8 animate-in fade-in-0 duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-border/70">
         <div className="flex items-center gap-3 flex-grow min-w-0">
-            <Button variant="outline" size="icon" asChild className="shrink-0" aria-label="Back to Library">
+            <Button variant="outline" size="icon" asChild className="shrink-0 hover:border-primary/50" aria-label="Back to Library">
               <Link href="/library">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
@@ -101,43 +101,43 @@ export default function ProjectPage() {
                 <Input 
                   value={editableTitle} 
                   onChange={(e) => setEditableTitle(e.target.value)} 
-                  className="text-2xl font-bold font-headline h-11 flex-grow"
+                  className="text-2xl font-bold font-headline h-11 flex-grow shadow-sm focus:shadow-md"
                   onKeyDown={(e) => {
                       if (e.key === 'Enter') handleTitleSave();
                       if (e.key === 'Escape') {
-                        setEditableTitle(project.title); // Reset to original on escape
+                        setEditableTitle(project.title); 
                         setIsEditingTitle(false);
                       }
                   }}
-                  onBlur={() => { // Save on blur if changed, or revert
+                  onBlur={() => { 
                     if (editableTitle.trim() !== '' && editableTitle.trim() !== project.title) {
                         handleTitleSave();
                     } else {
-                        setEditableTitle(project.title); // Revert if empty or unchanged
+                        setEditableTitle(project.title); 
                         setIsEditingTitle(false);
                     }
                   }}
                   autoFocus
                   aria-label="Edit project title"
                 />
-                <Button onClick={handleTitleSave} size="icon" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-800 shrink-0" aria-label="Save title">
+                <Button onClick={handleTitleSave} size="icon" variant="ghost" className="text-green-600 hover:text-green-500 hover:bg-green-500/10 dark:hover:bg-green-700/20 shrink-0" aria-label="Save title">
                     <Check className="h-5 w-5" />
                 </Button>
-                 <Button onClick={() => { setEditableTitle(project.title); setIsEditingTitle(false); }} size="icon" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-800 shrink-0" aria-label="Cancel title edit">
+                 <Button onClick={() => { setEditableTitle(project.title); setIsEditingTitle(false); }} size="icon" variant="ghost" className="text-red-600 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-700/20 shrink-0" aria-label="Cancel title edit">
                     <X className="h-5 w-5" />
                 </Button>
               </div>
             ) : (
-              <div className="flex gap-2 items-center cursor-pointer group flex-grow min-w-0" onClick={() => setIsEditingTitle(true)} title="Edit title" role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(true)}>
-                <h1 className="text-2xl md:text-3xl font-bold font-headline truncate" title={project.title}>
+              <div className="flex gap-2 items-center cursor-pointer group flex-grow min-w-0" onClick={() => setIsEditingTitle(true)} title="Edit title (Click to edit)" role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(true)}>
+                <h1 className="text-2xl md:text-3xl font-bold font-headline truncate text-foreground" title={project.title}>
                   {project.title}
                 </h1>
-                <Edit3 className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                <Edit3 className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all duration-200 shrink-0" />
               </div>
             )}
         </div>
         <div className="flex gap-2 shrink-0 self-start sm:self-center">
-            <Button variant="destructive_outline" onClick={() => setShowDeleteConfirm(true)} > {/* Use new variant if defined, or adjust classes */}
+            <Button variant="destructive_outline" onClick={() => setShowDeleteConfirm(true)} >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete Project
             </Button>
         </div>
@@ -150,24 +150,24 @@ export default function ProjectPage() {
           <TabsTrigger value="video" disabled={!(project.generatedScenes && project.generatedScenes.length > 0)} className="py-2.5">Video</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="analysis" className="mt-8">
+        <TabsContent value="analysis" className="mt-8 animate-in fade-in-50 duration-300">
           <AnalysisTabContent project={project} />
         </TabsContent>
-        <TabsContent value="storyboard" className="mt-8">
+        <TabsContent value="storyboard" className="mt-8 animate-in fade-in-50 duration-300">
           {project.analysis ? (
             <StoryboardTabContent project={project} onProjectUpdate={handleProjectUpdate} />
           ) : (
-            <div className="text-center py-12 text-muted-foreground bg-card p-8 rounded-lg shadow">
+            <div className="text-center py-12 text-muted-foreground bg-card/80 p-8 rounded-lg shadow-inner border border-border/50">
                 <p className="text-lg">Please complete story analysis first to unlock storyboard and scene generation features.</p>
                 <p className="mt-2 text-sm">The AI needs to understand your story before it can visualize it.</p>
             </div>
           )}
         </TabsContent>
-        <TabsContent value="video" className="mt-8">
+        <TabsContent value="video" className="mt-8 animate-in fade-in-50 duration-300">
            {(project.generatedScenes && project.generatedScenes.length > 0) ? (
             <VideoTabContent project={project} onProjectUpdate={handleProjectUpdate} />
            ) : (
-             <div className="text-center py-12 text-muted-foreground bg-card p-8 rounded-lg shadow">
+             <div className="text-center py-12 text-muted-foreground bg-card/80 p-8 rounded-lg shadow-inner border border-border/50">
                 <p className="text-lg">Generate visual scenes first to assemble your video.</p>
                 <p className="mt-2 text-sm">Once scenes are ready, you can compile them into the final video here.</p>
             </div>

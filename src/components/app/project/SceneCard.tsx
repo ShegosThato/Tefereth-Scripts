@@ -18,7 +18,7 @@ export function SceneCard({ scene, index, type = 'storyboard' }: SceneCardProps)
   const dataAiHintForPlaceholder = type === 'storyboard' ? "storyboard frame" : "generated scene";
 
   return (
-    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 group border-border">
+    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 ease-in-out group border-border/70 transform hover:-translate-y-1 hover:scale-[1.02]">
       <div className="aspect-video w-full bg-muted/30 relative overflow-hidden">
         {imageUrl ? (
           <Image
@@ -30,24 +30,23 @@ export function SceneCard({ scene, index, type = 'storyboard' }: SceneCardProps)
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4">
-            <ImageIcon className="h-12 w-12 mb-2 opacity-50" />
+            <ImageIcon className="h-12 w-12 mb-2 opacity-30 group-hover:opacity-50 transition-opacity" />
             <p className="text-xs text-center">No image available for this scene.</p>
-             {/* Fallback image for layout and AI hint even if no specific imageUrl */}
              <Image 
                 src={`https://placehold.co/400x225.png`} 
                 alt="Placeholder image for scene" 
                 fill 
-                className="object-cover opacity-0 pointer-events-none" // Invisible, for layout and AI hint only
+                className="object-cover opacity-0 pointer-events-none"
                 data-ai-hint={dataAiHintForPlaceholder} 
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
           </div>
         )}
-         <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
+         <div className="absolute top-2 left-2 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm shadow-md transition-opacity duration-200 group-hover:opacity-80">
           Scene {index + 1}
         </div>
       </div>
-      <CardContent className="p-4">
+      <CardContent className="p-4 bg-card/80">
         <CardDescription className="text-sm line-clamp-3 leading-relaxed" title={scene.sceneDescription}>
           {scene.sceneDescription || "No description for this scene."}
         </CardDescription>

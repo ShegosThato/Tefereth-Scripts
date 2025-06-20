@@ -80,7 +80,7 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
       
       const appScenes: AppScene[] = generatedScenesResult.scenes.map(aiScene => ({
         sceneDescription: aiScene.sceneDescription,
-        imageUrl: aiScene.imageUrl, // This should be a data URI from Genkit image generation
+        imageUrl: aiScene.imageUrl, 
       }));
 
       onProjectUpdate({ generatedScenes: appScenes });
@@ -99,20 +99,20 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
 
   return (
     <div className="space-y-10">
-      <Card className="shadow-lg border-border">
+      <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline flex items-center">
+          <CardTitle className="text-2xl font-headline flex items-center text-foreground">
             <Clapperboard className="mr-3 h-7 w-7 text-primary" />
             Step 1: AI Storyboard
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground">
             {currentStoryboard.length > 0
               ? `Your storyboard has ${currentStoryboard.length} scenes. You can regenerate it if needed.`
               : "Let AI create a visual storyboard from your story analysis."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={handleGenerateStoryboard} disabled={isLoadingStoryboard || !project.analysis} size="lg" className="text-base px-6 py-3">
+          <Button onClick={handleGenerateStoryboard} disabled={isLoadingStoryboard || !project.analysis} size="lg" className="text-base px-6 py-3 shadow-md hover:shadow-lg">
             {isLoadingStoryboard ? (
               <LoadingSpinner text="Generating Storyboard..." />
             ) : (
@@ -123,8 +123,8 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
             )}
           </Button>
           {currentStoryboard.length > 0 && (
-            <div className="mt-8">
-              <h3 className="text-xl font-semibold mb-4">Storyboard Scenes ({currentStoryboard.length}):</h3>
+            <div className="mt-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Storyboard Scenes ({currentStoryboard.length}):</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {currentStoryboard.map((scene, index) => (
                   <SceneCard key={`storyboard-${project.id}-${index}`} scene={scene} index={index} type="storyboard"/>
@@ -137,15 +137,15 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
 
       {currentStoryboard.length > 0 && (
         <>
-          <Separator className="my-10" />
+          <Separator className="my-10 bg-border/50" />
           
-          <Card className="shadow-lg border-border">
+          <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
             <CardHeader>
-              <CardTitle className="text-2xl font-headline flex items-center">
+              <CardTitle className="text-2xl font-headline flex items-center text-foreground">
                 <Palette className="mr-3 h-7 w-7 text-primary" />
                 Step 2: Choose Visual Style
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Select a visual style to apply when generating your scenes.
               </CardDescription>
             </CardHeader>
@@ -154,15 +154,15 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
             </CardContent>
           </Card>
           
-          <Separator className="my-10" />
+          <Separator className="my-10 bg-border/50" />
           
-          <Card className="shadow-lg border-border">
+          <Card className="shadow-lg border-border/70 transform transition-all duration-300 hover:shadow-xl">
             <CardHeader>
-              <CardTitle className="text-2xl font-headline flex items-center">
+              <CardTitle className="text-2xl font-headline flex items-center text-foreground">
                 <ImagePlay className="mr-3 h-7 w-7 text-primary" />
                 Step 3: Generate Visual Scenes
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 {currentGeneratedScenes.length > 0 
                   ? `You have ${currentGeneratedScenes.length} scenes generated with the selected style.`
                   : "Apply the chosen style to generate unique images for each storyboard scene."}
@@ -170,12 +170,12 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
             </CardHeader>
             <CardContent>
               {!selectedVisualStyleId && (
-                <div className="mb-4 p-4 bg-yellow-500/10 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 border border-yellow-500/30 rounded-md flex items-center gap-2 text-sm">
+                <div className="mb-4 p-4 bg-yellow-500/10 text-yellow-800 dark:bg-yellow-700/20 dark:text-yellow-300 border border-yellow-600/30 dark:border-yellow-500/40 rounded-md flex items-center gap-2 text-sm shadow">
                   <AlertTriangle className="h-5 w-5" />
                   Please select a visual style above to enable scene generation.
                 </div>
               )}
-              <Button onClick={handleGenerateScenes} disabled={isLoadingScenes || !canGenerateScenes} size="lg" className="text-base px-6 py-3">
+              <Button onClick={handleGenerateScenes} disabled={isLoadingScenes || !canGenerateScenes} size="lg" className="text-base px-6 py-3 shadow-md hover:shadow-lg">
                 {isLoadingScenes ? (
                   <LoadingSpinner text="Generating Scenes..." />
                 ) : (
@@ -186,8 +186,8 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
                 )}
               </Button>
               {currentGeneratedScenes.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold mb-4">Generated Scenes ({currentGeneratedScenes.length}):</h3>
+                <div className="mt-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
+                  <h3 className="text-xl font-semibold mb-4 text-foreground">Generated Scenes ({currentGeneratedScenes.length}):</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {currentGeneratedScenes.map((scene, index) => (
                       <SceneCard key={`generated-${project.id}-${index}`} scene={scene} index={index} type="generated"/>
