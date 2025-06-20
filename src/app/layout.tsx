@@ -17,23 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      appearance={{
-        variables: { 
-          colorPrimary: 'hsl(0 84% 60%)',
-          colorBackground: 'hsl(0 0% 8%)',
-          colorText: 'hsl(0 0% 95%)',
-          colorInputBackground: 'hsl(0 0% 18%)',
-          colorInputText: 'hsl(0 0% 95%)',
-        },
-        elements: {
-          userButtonPopoverCard: 'bg-popover text-popover-foreground border-border',
-          userButtonPopoverActionButton: 'text-popover-foreground',
-          card: 'bg-card text-card-foreground border-border shadow-lg',
-          formFieldInput: 'bg-input text-foreground border-border',
-        }
-      }}
-    >
+    <ClerkProvider>
       <html lang="en" className="h-full" suppressHydrationWarning>
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
