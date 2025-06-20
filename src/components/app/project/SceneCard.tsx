@@ -1,58 +1,49 @@
+
 'use client';
 
 import Image from 'next/image';
 import type { Scene } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { ImageIcon, Edit3, Trash2 } from 'lucide-react'; // Placeholder for actions
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription } from '@/components/ui/card';
+import { ImageIcon } from 'lucide-react';
 
 interface SceneCardProps {
   scene: Scene;
   index: number;
-  // onEdit?: (index: number) => void;
-  // onDelete?: (index: number) => void;
   type?: 'storyboard' | 'generated';
 }
 
 export function SceneCard({ scene, index, type = 'storyboard' }: SceneCardProps) {
   const imageUrl = scene.imageUrl || scene.storyboardImageUri;
+  const altText = `Visual for scene ${index + 1}: ${scene.sceneDescription.substring(0, 50)}...`;
+  const dataAiHintForPlaceholder = type === 'storyboard' ? "storyboard frame" : "generated scene";
 
   return (
-    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 group">
-      <div className="aspect-video w-full bg-muted/50 relative overflow-hidden">
+    <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 group border-border">
+      <div className="aspect-video w-full bg-muted/30 relative overflow-hidden">
         {imageUrl ? (
           <Image
             src={imageUrl}
-            alt={`Scene ${index + 1}: ${scene.sceneDescription}`}
-            width={400} // Fixed width
-            height={225} // Fixed height for 16:9 aspect ratio
-            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+            alt={altText}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
-            <ImageIcon className="h-16 w-16 mb-2" />
-            <p className="text-sm">No image available</p>
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4">
+            <ImageIcon className="h-12 w-12 mb-2 opacity-50" />
+            <p className="text-xs text-center">No image available for this scene.</p>
+             <Image src={`https://placehold.co/400x225.png`} alt="Placeholder" fill className="object-cover opacity-0" data-ai-hint={dataAiHintForPlaceholder} />
           </div>
         )}
-         <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+         <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
           Scene {index + 1}
         </div>
       </div>
-      <CardContent className="p-3">
+      <CardContent className="p-4">
         <CardDescription className="text-sm line-clamp-3 leading-relaxed" title={scene.sceneDescription}>
-          {scene.sceneDescription}
+          {scene.sceneDescription || "No description for this scene."}
         </CardDescription>
       </CardContent>
-      {/* Optional: Add footer for actions like edit/delete scene
-      <CardFooter className="p-3 border-t flex justify-end gap-2">
-        <Button variant="outline" size="icon" onClick={() => onEdit?.(index)} aria-label="Edit scene">
-          <Edit3 className="h-4 w-4" />
-        </Button>
-        <Button variant="destructive" size="icon" onClick={() => onDelete?.(index)} aria-label="Delete scene">
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </CardFooter>
-      */}
     </Card>
   );
 }

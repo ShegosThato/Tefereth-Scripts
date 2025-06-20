@@ -42,9 +42,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-body antialiased flex flex-col min-h-screen bg-background">
+      <body className="font-body antialiased flex flex-col min-h-screen bg-background text-foreground">
         <AppHeader />
-        <main className="flex-grow container mx-auto py-6 px-4 sm:px-6 lg:px-8 pb-20 md:pb-8"> {/* Adjusted padding-bottom for BottomNav */}
+        <main className="flex-grow container mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-24 md:pb-12"> {/* Increased padding-bottom for BottomNav and general content padding */}
           {children}
         </main>
         <BottomNavigationBar />

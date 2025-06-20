@@ -17,18 +17,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, FileText, UploadCloud } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import React, { useEffect, useState } from 'react';
+import { Sparkles, FileText, UploadCloud, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-
+import { cn } from '@/lib/utils';
 
 const storyFormSchema = z.object({
-  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }).max(100),
+  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }).max(100, { message: 'Title must be less than 100 characters.' }),
   storyText: z
     .string()
     .min(1, { message: 'Story text or a successfully read file is required.' })
-    .max(50000, { message: 'Story text must be less than 50000 characters (or file content is too large).' }),
+    .max(50000, { message: 'Story text must be less than 50,000 characters (or file content is too large).' }),
   storyFile: z.custom<FileList>((val) => val instanceof FileList ? val : null).optional(),
 });
 
@@ -48,79 +47,80 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
   });
   const { toast } = useToast();
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileReadSuccess, setFileReadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const storyFileRef = form.register("storyFile");
+  const storyFileWatch = form.watch("storyFile");
 
   useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === 'storyFile') {
-        const fileList = value.storyFile;
-        if (fileList && fileList.length > 0) {
-          const file = fileList[0];
-          setFileName(file.name);
-          
-          if (file.type === 'text/plain' || file.name.endsWith('.md')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const text = e.target?.result as string;
-              if (text.length > 50000) {
-                  toast({
-                    title: "File Too Large",
-                    description: "The content of the selected file exceeds the 50,000 character limit. Please use a smaller file or paste the content manually.",
-                    variant: "destructive",
-                  });
-                  form.setValue('storyText', ''); // Clear textarea if file is too large
-                  form.resetField('storyFile'); // Clear the file input
-                  setFileName(null);
-              } else {
-                form.setValue('storyText', text, { shouldValidate: true });
-                toast({ title: "File Content Loaded", description: `Content from "${file.name}" loaded into the story text area.` });
-              }
-            };
-            reader.onerror = () => {
-              toast({ title: "File Read Error", description: "Could not read the file content.", variant: "destructive" });
+    if (storyFileWatch && storyFileWatch.length > 0) {
+      const file = storyFileWatch[0];
+      setFileName(file.name);
+      setFileReadSuccess(false); // Reset on new file selection
+      
+      if (file.type === 'text/plain' || file.name.endsWith('.md')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target?.result as string;
+          if (text.length > 50000) {
+              toast({
+                title: "File Too Large",
+                description: "Content exceeds 50,000 characters. Use a smaller file or paste manually.",
+                variant: "destructive",
+              });
+              form.setValue('storyText', ''); 
+              if (fileInputRef.current) fileInputRef.current.value = ""; // Clear file input
+              form.resetField('storyFile');
               setFileName(null);
-            };
-            reader.readAsText(file);
-          } else if (file) {
-             toast({ 
-                title: "File Type Note", 
-                description: `Selected "${file.name}". Content extraction is only supported for .txt and .md files. For other types, please paste content manually.`,
-                variant: "default"
-            });
-            form.setValue('storyText', ''); // Clear storyText for non-txt/md files
+          } else {
+            form.setValue('storyText', text, { shouldValidate: true });
+            setFileReadSuccess(true);
+            toast({ title: "File Content Loaded", description: `Content from "${file.name}" loaded.` });
           }
-        } else {
+        };
+        reader.onerror = () => {
+          toast({ title: "File Read Error", description: "Could not read file content.", variant: "destructive" });
           setFileName(null);
-        }
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          form.resetField('storyFile');
+        };
+        reader.readAsText(file);
+      } else if (file) {
+         toast({ 
+            title: "File Type Note", 
+            description: `Selected "${file.name}". Auto-extraction for .txt/.md only. Paste other content manually.`,
+        });
+        form.setValue('storyText', ''); // Clear storyText as content isn't auto-read
       }
-    });
-    return () => subscription.unsubscribe();
-  }, [form, toast]);
+    } else {
+      setFileName(null);
+      setFileReadSuccess(false);
+    }
+  }, [storyFileWatch, form, toast]);
 
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-xl">
+    <Card className="w-full max-w-2xl mx-auto shadow-xl border-border">
       <CardHeader className="text-center">
-        <div className="flex justify-center items-center mb-2">
-            <Sparkles className="h-10 w-10 text-primary" />
+        <div className="flex justify-center items-center mb-3">
+            <Sparkles className="h-12 w-12 text-primary" />
         </div>
-        <CardTitle className="font-headline text-3xl">Create Your Story Video</CardTitle>
-        <CardDescription>
-          Enter your story details below, or upload a document. Our AI will analyze it.
+        <CardTitle className="font-headline text-3xl md:text-4xl">Start Your AI Video Project</CardTitle>
+        <CardDescription className="text-base">
+          Provide a title and your story text, or upload a document.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-2">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Story Title</FormLabel>
+                  <FormLabel className="text-lg font-semibold">Story Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="E.g., The Lost Astronaut" {...field} className="text-base py-3" />
+                    <Input placeholder="E.g., The Journey of Luna" {...field} className="text-base py-3 h-12" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,24 +130,31 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
             <FormField
               control={form.control}
               name="storyFile"
-              render={() => ( // field is not directly used here due to custom registration
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg flex items-center gap-2">
-                    <UploadCloud className="h-5 w-5" />
-                    Or Upload a Document
+                  <FormLabel className="text-lg font-semibold flex items-center gap-2">
+                    <UploadCloud className="h-6 w-6 text-primary" />
+                    Upload Document (Optional)
                   </FormLabel>
                   <FormControl>
                      <Input 
                         type="file" 
-                        {...storyFileRef}
-                        className="text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        ref={fileInputRef}
+                        onChange={(e) => field.onChange(e.target.files)}
+                        className="text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer h-12 pt-3"
                         accept=".txt,.md,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        aria-describedby="file-description"
                       />
                   </FormControl>
-                  {fileName && <FormDescription>Selected file: {fileName}</FormDescription>}
-                  <FormDescription>
-                    Supports .txt, .md (content extracted), .pdf, .doc, .docx. Max 50,000 characters.
+                  <FormDescription id="file-description">
+                    Supports .txt, .md (content auto-loaded), .pdf, .doc, .docx. Max 50,000 characters for auto-load.
                   </FormDescription>
+                  {fileName && (
+                    <div className={cn("mt-2 text-sm flex items-center", fileReadSuccess ? "text-green-600" : "text-muted-foreground")}>
+                      {fileReadSuccess && <CheckCircle className="h-4 w-4 mr-2" />}
+                      Selected: {fileName} {fileReadSuccess && "(Content loaded)"}
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -158,20 +165,24 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
               name="storyText"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Your Story</FormLabel>
+                  <FormLabel className="text-lg font-semibold">Your Story</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Once upon a time in a galaxy far, far away... (or content from your .txt/.md file will appear here)"
-                      className="min-h-[200px] text-base py-3"
+                      placeholder="Once upon a time... (or content from your .txt/.md file will appear here)"
+                      className="min-h-[250px] text-base py-3"
                       {...field}
+                      aria-label="Story text input area"
                     />
                   </FormControl>
+                   <FormDescription>
+                    Enter your story or it will be auto-filled if you upload a compatible .txt or .md file.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
+            <Button type="submit" className="w-full text-lg py-6 h-14" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
@@ -180,7 +191,7 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
               ) : (
                 <>
                   <FileText className="mr-2 h-5 w-5" />
-                  Analyze Story & Start Project
+                  Analyze & Create Project
                 </>
               )}
             </Button>

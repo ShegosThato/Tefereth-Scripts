@@ -50,48 +50,48 @@
   }
 
   .dark {
-    --background: 210 30% 12%; /* Darker blue-gray */
-    --foreground: 207 80% 90%; /* Light grayish blue */
+    --background: 210 30% 10%; /* Even darker blue-gray for background */
+    --foreground: 207 80% 92%; /* Slightly brighter light grayish blue for text */
 
-    --card: 210 30% 18%; /* Slightly lighter than background */
-    --card-foreground: 207 80% 90%;
+    --card: 210 30% 15%; /* Darker card background */
+    --card-foreground: 207 80% 92%;
 
-    --popover: 210 30% 18%;
-    --popover-foreground: 207 80% 90%;
+    --popover: 210 30% 15%;
+    --popover-foreground: 207 80% 92%;
 
-    --primary: 207 70% 60%; /* Adjusted primary for dark mode */
-    --primary-foreground: 210 100% 95%; /* Very light text on primary */
+    --primary: 207 75% 65%; /* Slightly adjusted primary for dark mode */
+    --primary-foreground: 210 100% 98%; /* Very light text on primary */
 
-    --secondary: 207 50% 30%; /* Darker, less saturated blue */
-    --secondary-foreground: 207 80% 90%;
+    --secondary: 207 50% 25%; /* Darker, less saturated blue for secondary */
+    --secondary-foreground: 207 80% 92%;
 
-    --muted: 207 40% 25%; /* Muted elements in dark mode */
-    --muted-foreground: 207 60% 70%; /* Softer foreground for muted */
+    --muted: 207 40% 22%; /* Muted elements in dark mode */
+    --muted-foreground: 207 60% 75%; /* Softer foreground for muted */
 
-    --accent: 124 40% 60%; /* Adjusted accent for dark mode */
-    --accent-foreground: 122 80% 95%; /* Light text on accent */
+    --accent: 124 40% 65%; /* Adjusted accent for dark mode */
+    --accent-foreground: 122 80% 98%; /* Light text on accent */
 
-    --destructive: 0 60% 50%; /* Slightly desaturated red for dark */
+    --destructive: 0 60% 55%; /* Slightly adjusted red for dark */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 207 40% 35%; /* Softer border for dark mode */
-    --input: 207 40% 28%; /* Darker input backgrounds */
-    --ring: 207 70% 55%; /* Ring color for dark mode */
+    --border: 207 40% 30%; /* Softer border for dark mode */
+    --input: 207 40% 25%; /* Darker input backgrounds */
+    --ring: 207 75% 58%; /* Ring color for dark mode */
 
-    --chart-1: 12 70% 70%;
-    --chart-2: 173 50% 50%;
-    --chart-3: 197 30% 35%;
-    --chart-4: 43 70% 70%;
-    --chart-5: 27 80% 70%;
+    --chart-1: 12 70% 75%;
+    --chart-2: 173 50% 55%;
+    --chart-3: 197 30% 40%;
+    --chart-4: 43 70% 75%;
+    --chart-5: 27 80% 75%;
 
-    --sidebar-background: 210 30% 15%;
-    --sidebar-foreground: 207 80% 90%;
-    --sidebar-primary: 207 70% 60%;
-    --sidebar-primary-foreground: 210 100% 95%;
-    --sidebar-accent: 124 40% 60%;
-    --sidebar-accent-foreground: 122 80% 95%;
-    --sidebar-border: 207 40% 35%;
-    --sidebar-ring: 207 70% 55%;
+    --sidebar-background: 210 30% 12%; /* Darker sidebar */
+    --sidebar-foreground: 207 80% 92%;
+    --sidebar-primary: 207 75% 65%;
+    --sidebar-primary-foreground: 210 100% 98%;
+    --sidebar-accent: 124 40% 65%;
+    --sidebar-accent-foreground: 122 80% 98%;
+    --sidebar-border: 207 40% 30%;
+    --sidebar-ring: 207 75% 58%;
   }
 }
 

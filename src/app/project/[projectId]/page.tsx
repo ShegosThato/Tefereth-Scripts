@@ -1,15 +1,16 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getProject, updateProject as saveProjectDetails, type Project } from '@/lib/project-store'; // Ensure Project type is exported
+import { getProject, updateProject as saveProjectDetails, type Project } from '@/lib/project-store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalysisTabContent } from '@/components/app/project/AnalysisTabContent';
 import { StoryboardTabContent } from '@/components/app/project/StoryboardTabContent';
 import { VideoTabContent } from '@/components/app/project/VideoTabContent';
 import { LoadingSpinner } from '@/components/app/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit3, Save, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit3, Save, Share2, Trash2, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +45,6 @@ export default function ProjectPage() {
         setProject(fetchedProject);
         setEditableTitle(fetchedProject.title);
       } else {
-        // Handle project not found, e.g., redirect to library or 404
         toast({ title: "Project Not Found", description: "The requested project could not be found.", variant: "destructive" });
         router.push('/library');
       }
@@ -52,20 +52,19 @@ export default function ProjectPage() {
     }
   }, [projectId, router, toast]);
 
-  const handleProjectUpdate = (updatedProject: Project) => {
-    setProject(updatedProject);
-    // Optionally re-fetch from store if updates are complex or can happen elsewhere
-    // const refreshedProject = getProject(projectId);
-    // if(refreshedProject) setProject(refreshedProject);
-  };
+  const handleProjectUpdate = useCallback((updatedProjectData: Partial<Project>) => {
+    if (project) {
+        const updatedProject = saveProjectDetails(project.id, updatedProjectData);
+        if (updatedProject) {
+            setProject(updatedProject);
+        }
+    }
+  }, [project]);
   
   const handleTitleSave = () => {
     if (project && editableTitle.trim() !== '' && editableTitle.trim() !== project.title) {
-      const updatedProject = saveProjectDetails(project.id, { title: editableTitle.trim() });
-      if (updatedProject) {
-        setProject(updatedProject);
-        toast({ title: "Title Updated", description: "Project title saved successfully." });
-      }
+      handleProjectUpdate({ title: editableTitle.trim() });
+      toast({ title: "Title Updated", description: "Project title saved successfully." });
     }
     setIsEditingTitle(false);
   };
@@ -81,73 +80,86 @@ export default function ProjectPage() {
 
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><LoadingSpinner text="Loading project..." size={48} /></div>;
+    return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><LoadingSpinner text="Loading project details..." size={48} /></div>;
   }
 
   if (!project) {
-    // This case should ideally be handled by the redirect in useEffect
-    return <div className="text-center py-10">Project not found.</div>;
+    return <div className="text-center py-10 text-muted-foreground">Project data could not be loaded. <Link href="/library" className="text-primary hover:underline">Return to Library</Link></div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <Button variant="outline" size="icon" asChild className="shrink-0">
-          <Link href="/library" aria-label="Back to Library">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div className="flex-grow min-w-0">
-        {isEditingTitle ? (
-          <div className="flex gap-2 items-center">
-            <Input 
-              value={editableTitle} 
-              onChange={(e) => setEditableTitle(e.target.value)} 
-              className="text-2xl font-bold font-headline h-10"
-              onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
-            />
-            <Button onClick={handleTitleSave} size="icon" aria-label="Save title">
-                <Save className="h-5 w-5" />
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b">
+        <div className="flex items-center gap-3 flex-grow min-w-0">
+            <Button variant="outline" size="icon" asChild className="shrink-0" aria-label="Back to Library">
+              <Link href="/library">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
             </Button>
-          </div>
-        ) : (
-          <div className="flex gap-2 items-center cursor-pointer group" onClick={() => setIsEditingTitle(true)} title="Edit title">
-            <h1 className="text-3xl font-bold font-headline truncate" title={project.title}>
-              {project.title}
-            </h1>
-            <Edit3 className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        )}
+            {isEditingTitle ? (
+              <div className="flex gap-2 items-center flex-grow">
+                <Input 
+                  value={editableTitle} 
+                  onChange={(e) => setEditableTitle(e.target.value)} 
+                  className="text-2xl font-bold font-headline h-11 flex-grow"
+                  onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleTitleSave();
+                      if (e.key === 'Escape') setIsEditingTitle(false);
+                  }}
+                  autoFocus
+                  aria-label="Edit project title"
+                />
+                <Button onClick={handleTitleSave} size="icon" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-800" aria-label="Save title">
+                    <Check className="h-5 w-5" />
+                </Button>
+                 <Button onClick={() => setIsEditingTitle(false)} size="icon" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-800" aria-label="Cancel title edit">
+                    <X className="h-5 w-5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2 items-center cursor-pointer group flex-grow min-w-0" onClick={() => setIsEditingTitle(true)} title="Edit title" role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(true)}>
+                <h1 className="text-2xl md:text-3xl font-bold font-headline truncate" title={project.title}>
+                  {project.title}
+                </h1>
+                <Edit3 className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </div>
+            )}
         </div>
-        <div className="flex gap-2 shrink-0">
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(true)}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
+        <div className="flex gap-2 shrink-0 self-start sm:self-center">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-destructive-foreground bg-destructive hover:bg-destructive/90 border-destructive hover:border-destructive/90">
+                <Trash2 className="mr-2 h-4 w-4" /> Delete Project
             </Button>
-            {/* Share button can be added here if needed */}
         </div>
       </div>
       
       <Tabs defaultValue="analysis" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:max-w-md mx-auto">
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
-          <TabsTrigger value="storyboard" disabled={!project.analysis}>Storyboard & Scenes</TabsTrigger>
-          <TabsTrigger value="video" disabled={!(project.generatedScenes && project.generatedScenes.length > 0)}>Video</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 md:max-w-lg mx-auto h-auto sm:h-12 text-base p-1.5">
+          <TabsTrigger value="analysis" className="py-2.5">Analysis</TabsTrigger>
+          <TabsTrigger value="storyboard" disabled={!project.analysis} className="py-2.5">Storyboard & Scenes</TabsTrigger>
+          <TabsTrigger value="video" disabled={!(project.generatedScenes && project.generatedScenes.length > 0)} className="py-2.5">Video</TabsTrigger>
         </TabsList>
-        <TabsContent value="analysis" className="mt-6">
+        
+        <TabsContent value="analysis" className="mt-8">
           <AnalysisTabContent project={project} />
         </TabsContent>
-        <TabsContent value="storyboard" className="mt-6">
+        <TabsContent value="storyboard" className="mt-8">
           {project.analysis ? (
             <StoryboardTabContent project={project} onProjectUpdate={handleProjectUpdate} />
           ) : (
-            <p className="text-muted-foreground text-center py-8">Please complete story analysis first to access storyboard features.</p>
+            <div className="text-center py-12 text-muted-foreground bg-card p-8 rounded-lg shadow">
+                <p className="text-lg">Please complete story analysis first to unlock storyboard and scene generation features.</p>
+                <p className="mt-2 text-sm">The AI needs to understand your story before it can visualize it.</p>
+            </div>
           )}
         </TabsContent>
-        <TabsContent value="video" className="mt-6">
+        <TabsContent value="video" className="mt-8">
            {(project.generatedScenes && project.generatedScenes.length > 0) ? (
-            <VideoTabContent project={project} />
+            <VideoTabContent project={project} onProjectUpdate={handleProjectUpdate} />
            ) : (
-            <p className="text-muted-foreground text-center py-8">Please generate scenes first to access video features.</p>
+             <div className="text-center py-12 text-muted-foreground bg-card p-8 rounded-lg shadow">
+                <p className="text-lg">Generate visual scenes first to assemble your video.</p>
+                <p className="mt-2 text-sm">Once scenes are ready, you can compile them into the final video here.</p>
+            </div>
            )}
         </TabsContent>
       </Tabs>
@@ -155,15 +167,15 @@ export default function ProjectPage() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will permanently delete the project "{project.title}". This cannot be undone.
+              Are you absolutely sure you want to delete the project "{project.title}"? This action is permanent and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-              Delete Project
+              Yes, Delete Project
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
