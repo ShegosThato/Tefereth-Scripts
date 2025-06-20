@@ -45,7 +45,7 @@ export default function RootLayout({
         </head>
         <body className="font-body antialiased flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/70 selection:text-primary-foreground">
           <AppHeader />
-          <main className="flex-grow container mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-24 md:pb-12">
+          <main className="flex-grow container mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-24 md:pb-12 animate-in fade-in-50 duration-500">
             {children}
           </main>
           <BottomNavigationBar />

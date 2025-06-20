@@ -30,6 +30,7 @@ const convertTimestamps = (docData: any): any => {
 };
 
 export async function createProjectInFirestore(projectData: Omit<ProjectData, 'id' | 'createdAt' | 'updatedAt' | 'userId'>, userId: string): Promise<string> {
+  if (!db) throw new Error("Firestore is not initialized. Check your Firebase config.");
   const docRef = await addDoc(collection(db, PROJECTS_COLLECTION), {
     ...projectData,
     userId,
@@ -40,6 +41,7 @@ export async function createProjectInFirestore(projectData: Omit<ProjectData, 'i
 }
 
 export async function getProjectsForUser(userId: string): Promise<Project[]> {
+  if (!db) return []; // Return empty array if firestore is not available
   const q = query(
     collection(db, PROJECTS_COLLECTION), 
     where('userId', '==', userId),
@@ -57,6 +59,7 @@ export async function getProjectsForUser(userId: string): Promise<Project[]> {
 }
 
 export async function getProjectFromFirestore(projectId: string): Promise<Project | null> {
+  if (!db) throw new Error("Firestore is not initialized. Check your Firebase config.");
   const docRef = doc(db, PROJECTS_COLLECTION, projectId);
   const docSnap = await getDoc(docRef);
 
@@ -68,6 +71,7 @@ export async function getProjectFromFirestore(projectId: string): Promise<Projec
 }
 
 export async function updateProjectInFirestore(projectId: string, updates: Partial<ProjectData>): Promise<void> {
+  if (!db) throw new Error("Firestore is not initialized. Check your Firebase config.");
   const docRef = doc(db, PROJECTS_COLLECTION, projectId);
   await updateDoc(docRef, {
       ...updates,
@@ -76,6 +80,7 @@ export async function updateProjectInFirestore(projectId: string, updates: Parti
 }
 
 export async function deleteProjectFromFirestore(projectId: string): Promise<void> {
+  if (!db) throw new Error("Firestore is not initialized. Check your Firebase config.");
   const docRef = doc(db, PROJECTS_COLLECTION, projectId);
   await deleteDoc(docRef);
 }
