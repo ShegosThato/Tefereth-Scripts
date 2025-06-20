@@ -275,7 +275,7 @@ export function StoryboardTabContent() {
                 ) : (
                   <>
                     <ImagePlay className="mr-2 h-5 w-5" />
-                    {currentGeneratedScenes.length > 0 ? "Regenerate Scenes" : "Generate Scenes"}
+                    {currentGeneratedScenes.length > 0 ? "Regenerate All Scenes" : "Generate Scenes"}
                   </>
                 )}
               </Button>

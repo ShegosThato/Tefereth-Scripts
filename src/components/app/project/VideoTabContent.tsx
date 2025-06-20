@@ -127,7 +127,7 @@ export function VideoTabContent({}: VideoTabContentProps) {
               {scenesToDisplay.map((scene, index) => (
                 <div key={`video-scene-${index}`} className="aspect-video bg-muted/50 rounded overflow-hidden relative group shadow-sm border-border/50 transform transition-all duration-200 hover:scale-105 hover:shadow-md">
                    <Image 
-                    src={scene.imageUrl || scene.storyboardImageUri || "https://placehold.co/160x90.png"} 
+                    src={scene.imageUrl || "https://placehold.co/160x90.png"} 
                     alt={`Scene ${index + 1} thumbnail`} 
                     fill
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
