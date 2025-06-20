@@ -27,6 +27,7 @@ export default function NewProjectPage() {
 
     let storyContent = values.storyText;
 
+    // Also check for whitespace-only content
     if (!storyContent || storyContent.trim().length === 0) {
       toast({
         title: 'Missing Story Content',
@@ -46,7 +47,8 @@ export default function NewProjectPage() {
     }
 
     try {
-      const analysisInput: AnalyzeStoryInput = { storyText: storyContent };
+      // Use the trimmed content for analysis to avoid issues with leading/trailing whitespace
+      const analysisInput: AnalyzeStoryInput = { storyText: storyContent.trim() };
       const analysisResult = await analyzeStory(analysisInput);
 
       const newProjectId = await addProject(

@@ -27,7 +27,8 @@ const storyFormSchema = z.object({
   storyText: z
     .string()
     .min(1, { message: 'Story text or a successfully read file is required.' })
-    .max(50000, { message: 'Story text must be less than 50,000 characters (or file content is too large).' }),
+    .max(50000, { message: 'Story text must be less than 50,000 characters (or file content is too large).' })
+    .refine(value => value.trim().length > 0, { message: "Story text cannot be only whitespace."}),
   storyFile: z.custom<FileList>((val) => val instanceof FileList ? val : null).optional(),
 });
 
@@ -48,6 +49,7 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
   const { toast } = useToast();
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileReadSuccess, setFileReadSuccess] = useState(false);
+  const [isHighlighting, setIsHighlighting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const storyFileWatch = form.watch("storyFile");
@@ -75,7 +77,12 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
           } else {
             form.setValue('storyText', text, { shouldValidate: true });
             setFileReadSuccess(true);
-            toast({ title: "File Content Loaded", description: `Content from "${file.name}" loaded.` });
+            toast({ title: "File Content Loaded", description: `Content from "${file.name}" loaded into the story area.` });
+            
+            // Highlight the textarea to show content was loaded
+            setIsHighlighting(true);
+            const timer = setTimeout(() => setIsHighlighting(false), 2000);
+            return () => clearTimeout(timer);
           }
         };
         reader.onerror = () => {
@@ -149,13 +156,13 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
                             onChange={(e) => onChange(e.target.files)} 
                             {...restField} 
                             className="text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer h-12 pl-10 pr-3 shadow-sm focus:shadow-md"
-                            accept=".txt,.md,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            accept=".txt,.md"
                             aria-describedby="file-description"
                         />
                     </FormControl>
                   </div>
-                  <FormDescription id="file-description" className="mt-1.5">
-                    Supports .txt, .md (content auto-loaded). Max 50,000 characters for auto-load.
+                  <FormDescription id="file-description">
+                    Supports .txt and .md for automatic content loading.
                   </FormDescription>
                   {fileName && (
                     <div className={cn("mt-2 text-sm flex items-center p-2 rounded-md", fileReadSuccess ? "text-green-700 dark:text-green-400 bg-green-500/10" : "text-muted-foreground bg-muted/50")}>
@@ -177,13 +184,16 @@ export function StoryInputForm({ onSubmit, isLoading = false, defaultValues }: S
                   <FormControl>
                     <Textarea
                       placeholder="Once upon a time... (or content from your .txt/.md file will appear here)"
-                      className="min-h-[250px] text-base py-3 shadow-sm focus:shadow-md"
+                      className={cn(
+                        "min-h-[250px] text-base py-3 shadow-sm focus:shadow-md transition-all duration-300",
+                        isHighlighting && "ring-2 ring-primary ring-offset-2 shadow-lg"
+                      )}
                       {...field}
                       aria-label="Story text input area"
                     />
                   </FormControl>
                    <FormDescription className="mt-1.5">
-                    Enter your story or it will be auto-filled if you upload a compatible .txt or .md file.
+                    Enter your story or it will be auto-filled if you upload a compatible file. Max 50,000 characters.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

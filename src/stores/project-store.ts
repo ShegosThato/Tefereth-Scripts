@@ -25,7 +25,7 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   currentProject: null,
-  isLoading: true, // Start with loading true for initial fetch
+  isLoading: false, // Start with loading false. Let actions manage their own loading state.
   error: null,
 
   setLoading: (isLoading) => set({ isLoading }),
@@ -73,8 +73,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const newProjectId = await createProjectInFirestore(projectData, userId);
-      // After adding, we could either refetch all or just add to the local state.
-      // Refetching is simpler and ensures data consistency.
+      // After adding, refetch all projects to ensure data consistency.
       await get().fetchAllProjects(userId); 
       set({ isLoading: false });
       return newProjectId;
@@ -88,9 +87,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   updateCurrentProject: async (updates) => {
     const { currentProject } = get();
     if (!currentProject) return;
-
-    // No need to set loading for this optimistic update, feels faster
-    // set({ isLoading: true, error: null }); 
+ 
     try {
       // Optimistically update the local state
       const updatedProject = { ...currentProject, ...updates, updatedAt: new Date().toISOString() };
@@ -106,24 +103,31 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     } catch (err) {
       console.error(`Error updating project ${currentProject.id}:`, err);
-      set({ error: 'Failed to update project.', isLoading: false });
-       // Optionally revert the optimistic update here
+      set({ error: 'Failed to update project.'});
+       // Revert the optimistic update on error
       set({ currentProject });
     }
   },
 
   deleteProject: async (projectId) => {
+    const currentUserId = get().currentProject?.userId;
     set({ isLoading: true, error: null });
     try {
         await deleteProjectFromFirestore(projectId);
+        // Optimistically remove from local state
         set(state => ({
             projects: state.projects.filter(p => p.id !== projectId),
             currentProject: state.currentProject?.id === projectId ? null : state.currentProject,
-            isLoading: false
         }));
+        // Refetch to ensure consistency, especially if on library page
+        if(currentUserId) {
+            await get().fetchAllProjects(currentUserId);
+        }
     } catch (err) {
         console.error(`Error deleting project ${projectId}:`, err);
-        set({ error: 'Failed to delete project.', isLoading: false });
+        set({ error: 'Failed to delete project.'});
+    } finally {
+        set({ isLoading: false });
     }
   }
 

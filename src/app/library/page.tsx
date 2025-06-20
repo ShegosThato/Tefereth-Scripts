@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Project } from '@/lib/types';
 import { useProjectStore } from '@/stores/project-store';
 import { useAuth } from '@clerk/nextjs';
-import { Film, LibraryBig, PlusCircle, Search } from 'lucide-react';
+import { Film, LibraryBig, PlusCircle, Search, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -32,6 +32,7 @@ export default function LibraryPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Only fetch if Clerk is loaded, user is signed in, and we have a userId.
     if (isLoaded && isSignedIn && userId) {
       fetchAllProjects(userId);
     }
@@ -57,18 +58,41 @@ export default function LibraryPage() {
   );
 
   const renderContent = () => {
+    // Show a loading state if Clerk is initializing or if we are actively fetching projects.
     if (!isLoaded || isLoading) {
       return (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ProjectCardSkeleton key={i} />
-          ))}
+         <div className="text-center">
+            <div className="flex justify-center items-center gap-3 mb-6">
+                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                <h2 className="text-2xl font-semibold text-foreground">Fetching your creative projects...</h2>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <ProjectCardSkeleton key={i} />
+              ))}
+            </div>
         </div>
       );
     }
 
     if (error) {
       return <div className="py-10 text-center text-destructive">{error}</div>;
+    }
+    
+    // This state is for after loading, when the user has no projects.
+    if (projects.length === 0) {
+       return (
+          <div className="p-8 py-16 text-center border rounded-lg bg-card/50 border-border/50 shadow-inner">
+            <Film className="w-24 h-24 mx-auto mb-8 text-muted-foreground/30" />
+            <h2 className="mb-3 text-2xl font-semibold text-foreground">Your Library is Empty</h2>
+            <p className="max-w-md mx-auto mb-8 text-muted-foreground">Start by creating a new story video. Let your imagination spark!</p>
+            <Button asChild size="lg" className="px-6 py-3 text-base shadow-md hover:shadow-lg">
+              <Link href="/">
+                <PlusCircle className="w-5 h-5 mr-2" /> Start Your First Project
+              </Link>
+            </Button>
+          </div>
+        );
     }
 
     if (filteredProjects.length > 0) {
@@ -81,15 +105,14 @@ export default function LibraryPage() {
       );
     }
 
+    // This state is for when there are projects, but none match the search term.
     return (
       <div className="p-8 py-16 text-center border rounded-lg bg-card/50 border-border/50 shadow-inner">
-        <Film className="w-24 h-24 mx-auto mb-8 text-muted-foreground/30 animate-pulse" />
-        <h2 className="mb-3 text-2xl font-semibold text-foreground">{searchTerm ? 'No Projects Match Your Search' : 'Your Library is Empty'}</h2>
-        <p className="max-w-md mx-auto mb-8 text-muted-foreground">{searchTerm ? 'Try different keywords or clear your search.' : 'Start by creating a new story video. Let your imagination spark!'}</p>
-        <Button asChild size="lg" className="px-6 py-3 text-base shadow-md hover:shadow-lg">
-          <Link href="/">
-            <PlusCircle className="w-5 h-5 mr-2" /> Start Your First Project
-          </Link>
+        <Search className="w-24 h-24 mx-auto mb-8 text-muted-foreground/30" />
+        <h2 className="mb-3 text-2xl font-semibold text-foreground">No Projects Match Your Search</h2>
+        <p className="max-w-md mx-auto mb-8 text-muted-foreground">Try different keywords or clear your search to see all your projects.</p>
+        <Button onClick={() => setSearchTerm('')} size="lg" className="px-6 py-3 text-base shadow-md hover:shadow-lg">
+            Clear Search
         </Button>
       </div>
     );
@@ -119,6 +142,7 @@ export default function LibraryPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           aria-label="Search projects"
+          disabled={!isLoading && projects.length === 0}
         />
       </div>
 
