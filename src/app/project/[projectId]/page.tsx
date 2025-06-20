@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getProject, updateProject as saveProjectDetails, type Project } from '@/lib/project-store';
+import { useProjectStore } from '@/stores/project-store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalysisTabContent } from '@/components/app/project/AnalysisTabContent';
 import { StoryboardTabContent } from '@/components/app/project/StoryboardTabContent';
@@ -24,54 +24,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteProject as deleteProjectFromStore } from '@/lib/project-store';
+import { useAuth } from '@clerk/nextjs';
 
 export default function ProjectPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { isLoaded, isSignedIn } = useAuth();
   const projectId = params.projectId as string;
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    currentProject: project,
+    isLoading,
+    error,
+    fetchProject,
+    updateCurrentProject,
+    deleteProject,
+  } = useProjectStore();
+
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editableTitle, setEditableTitle] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    if (projectId) {
-      const fetchedProject = getProject(projectId);
-      if (fetchedProject) {
-        setProject(fetchedProject);
-        setEditableTitle(fetchedProject.title);
-      } else {
-        toast({ title: "Project Not Found", description: "The requested project could not be found.", variant: "destructive" });
-        router.push('/library');
-      }
-      setIsLoading(false);
+    if (isLoaded && isSignedIn && projectId) {
+      fetchProject(projectId);
     }
-  }, [projectId, router, toast]);
-
-  const handleProjectUpdate = useCallback((updatedProjectData: Partial<Project>) => {
+  }, [projectId, isLoaded, isSignedIn, fetchProject]);
+  
+  useEffect(() => {
     if (project) {
-        const updatedProject = saveProjectDetails(project.id, updatedProjectData);
-        if (updatedProject) {
-            setProject(updatedProject);
-        }
+        setEditableTitle(project.title);
     }
   }, [project]);
-  
-  const handleTitleSave = () => {
+
+  const handleTitleSave = async () => {
     if (project && editableTitle.trim() !== '' && editableTitle.trim() !== project.title) {
-      handleProjectUpdate({ title: editableTitle.trim() });
+      await updateCurrentProject({ title: editableTitle.trim() });
       toast({ title: "Title Updated", description: "Project title saved successfully." });
     }
     setIsEditingTitle(false);
   };
 
-  const handleDeleteProject = () => {
+  const handleDeleteProject = async () => {
     if (project) {
-        deleteProjectFromStore(project.id);
+        await deleteProject(project.id);
         toast({ title: "Project Deleted", description: `"${project.title}" has been removed.`});
         router.push('/library');
     }
@@ -83,8 +80,12 @@ export default function ProjectPage() {
     return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><LoadingSpinner text="Loading project details..." size={48} /></div>;
   }
 
+  if (error) {
+    return <div className="text-center py-10 text-destructive">{error}</div>;
+  }
+
   if (!project) {
-    return <div className="text-center py-10 text-muted-foreground">Project data could not be loaded. <Link href="/library" className="text-primary hover:underline">Return to Library</Link></div>;
+    return <div className="text-center py-10 text-muted-foreground">Project data could not be loaded. It might not exist or you may not have permission to view it. <Link href="/library" className="text-primary hover:underline">Return to Library</Link></div>;
   }
 
   return (
@@ -155,7 +156,7 @@ export default function ProjectPage() {
         </TabsContent>
         <TabsContent value="storyboard" className="mt-8 animate-in fade-in-50 duration-300">
           {project.analysis ? (
-            <StoryboardTabContent project={project} onProjectUpdate={handleProjectUpdate} />
+            <StoryboardTabContent />
           ) : (
             <div className="text-center py-12 text-muted-foreground bg-card/80 p-8 rounded-lg shadow-inner border border-border/50">
                 <p className="text-lg">Please complete story analysis first to unlock storyboard and scene generation features.</p>
@@ -165,7 +166,7 @@ export default function ProjectPage() {
         </TabsContent>
         <TabsContent value="video" className="mt-8 animate-in fade-in-50 duration-300">
            {(project.generatedScenes && project.generatedScenes.length > 0) ? (
-            <VideoTabContent project={project} onProjectUpdate={handleProjectUpdate} />
+            <VideoTabContent />
            ) : (
              <div className="text-center py-12 text-muted-foreground bg-card/80 p-8 rounded-lg shadow-inner border border-border/50">
                 <p className="text-lg">Generate visual scenes first to assemble your video.</p>

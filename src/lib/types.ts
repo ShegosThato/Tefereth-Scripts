@@ -1,9 +1,6 @@
 
 import type { AnalyzeStoryOutput } from '@/ai/flows/analyze-story';
-// Assuming generateStoryboardOutput contains scene structure.
-// The output of generateStoryboard flow is StoryboardSceneSchema[] which is an array of {sceneDescription, imageUri}
 import type { GenerateStoryboardOutput as AIStoryboardOutput } from '@/ai/flows/generate-storyboard'; 
-// The output of generateScenes flow is { scenes: SceneSchema[] } where SceneSchema is { sceneDescription, imageUrl }
 import type { GenerateScenesOutput as AIGeneratedScenesOutput } from '@/ai/flows/generate-scenes';
 
 
@@ -11,28 +8,36 @@ export type StoryAnalysis = AnalyzeStoryOutput;
 
 export interface Scene {
   sceneDescription: string;
-  imageUrl?: string; // For final generated scenes, holds URL from AI (likely data URI)
-  storyboardImageUri?: string; // For storyboard phase, holds data URI from AI
+  imageUrl?: string;
+  storyboardImageUri?: string;
 }
 
-// This type represents the direct output of the AI storyboard generation flow
-export type StoryboardOutput = AIStoryboardOutput; // This is StoryboardSceneSchema[]
+export type StoryboardScene = {
+  sceneDescription: string;
+  imageUri: string;
+};
 
-// This type represents the `scenes` array within the output of the AI scene generation flow
-export type GeneratedAIScenes = AIGeneratedScenesOutput['scenes']; // This is SceneSchema[] from generate-scenes flow
+export type StoryboardOutput = StoryboardScene[];
 
-export interface Project {
+export type GeneratedAIScenes = AIGeneratedScenesOutput['scenes'];
+
+// This is the shape of the data stored in Firestore
+export interface ProjectData {
   id: string;
+  userId: string;
   title: string;
   storyText: string;
   analysis?: StoryAnalysis;
-  storyboard?: StoryboardOutput; // Stores the array of {sceneDescription, imageUri}
-  visualStyle?: string; // ID of the selected visual style
-  generatedScenes?: Scene[]; // This will store scenes after mapping from AIGeneratedScenes, fitting the common `Scene` interface. imageUrl will be populated.
+  storyboard?: StoryboardOutput;
+  visualStyle?: string;
+  generatedScenes?: Scene[];
   videoUrl?: string; 
   createdAt: string; 
   updatedAt: string; 
 }
+
+// This is the type used within the application, it's identical for now
+export type Project = ProjectData;
 
 export interface VisualStyle {
   id: string;
@@ -43,7 +48,6 @@ export interface VisualStyle {
   promptFragment: string;
 }
 
-// Added more diverse data-ai-hints
 export const visualStyles: VisualStyle[] = [
   { id: 'cinematic', name: 'Cinematic', description: 'Dramatic, rich colors.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'movie film still', promptFragment: 'cinematic style, dramatic lighting, high contrast, rich colors, film grain' },
   { id: 'anime', name: 'Anime', description: 'Japanese animation.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'anime style art', promptFragment: 'anime style, vibrant colors, expressive characters, detailed backgrounds, cel shading' },
@@ -53,4 +57,9 @@ export const visualStyles: VisualStyle[] = [
   { id: 'fantasy', name: 'Fantasy Art', description: 'Epic, detailed, magical.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'fantasy landscape painting', promptFragment: 'epic fantasy art style, detailed illustration, magical elements, rich textures, vibrant lighting' },
   { id: 'scifi', name: 'Sci-Fi Concept', description: 'Futuristic, technological.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'sci-fi concept illustration', promptFragment: 'sci-fi concept art style, futuristic technology, sleek designs, neon accents, metallic surfaces' },
   { id: 'cartoon', name: 'Modern Cartoon', description: 'Clean lines, bright.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'modern cartoon style', promptFragment: 'modern cartoon style, clean lines, bright and bold colors, expressive characters, simple backgrounds' },
+  { id: 'claymation', name: 'Claymation', description: 'Handcrafted, stop-motion.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'claymation character scene', promptFragment: 'claymation style, stop-motion animation, handcrafted look, vibrant, tactile textures' },
+  { id: '3drender', name: '3D Render', description: 'Modern animated film look.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: '3d animation movie', promptFragment: '3d render, Pixar style, high-detail, cinematic lighting, vibrant and expressive' },
+  { id: 'vaporwave', name: 'Vaporwave', description: 'Retro-futuristic aesthetic.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'vaporwave aesthetic landscape', promptFragment: 'vaporwave aesthetic, neon colors, pink and teal, 80s retro-futurism, grid lines, roman statues' },
+  { id: 'lineart', name: 'Line Art', description: 'Clean, minimalist.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'minimalist line art', promptFragment: 'minimalist line art, black and white, clean lines, simple shapes' },
+  { id: 'ukiyo-e', name: 'Ukiyo-e', description: 'Japanese woodblock print.', previewImageUrl: 'https://placehold.co/300x180.png', dataAiHint: 'japanese ukiyo-e art', promptFragment: 'Japanese ukiyo-e woodblock print style, flowing lines, muted color palette, traditional' },
 ];

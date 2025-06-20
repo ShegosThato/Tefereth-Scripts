@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getAllProjects, deleteProject as deleteProjectFromStore } from '@/lib/project-store';
+import { useProjectStore } from '@/stores/project-store';
 import type { Project } from '@/lib/types';
 import { ProjectCard } from '@/components/app/ProjectCard';
 import { Button } from '@/components/ui/button';
@@ -20,34 +20,48 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from '@/components/app/LoadingSpinner';
+import { useAuth } from '@clerk/nextjs';
 
 export default function LibraryPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { isLoaded, isSignedIn } = useAuth();
+  const { projects, isLoading, error, fetchAllProjects, deleteProject } = useProjectStore();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    setProjects(getAllProjects());
-  }, []);
+    if (isLoaded && isSignedIn) {
+      fetchAllProjects();
+    }
+  }, [isLoaded, isSignedIn, fetchAllProjects]);
 
   const handleDeleteProject = (project: Project) => {
     setProjectToDelete(project);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (projectToDelete) {
-      deleteProjectFromStore(projectToDelete.id);
-      setProjects(prevProjects => prevProjects.filter(p => p.id !== projectToDelete.id));
-      toast({ title: "Project Deleted", description: `"${projectToDelete.title}" has been removed.`});
+      const title = projectToDelete.title;
+      await deleteProject(projectToDelete.id);
+      toast({ title: "Project Deleted", description: `"${title}" has been removed.`});
       setProjectToDelete(null);
     }
   };
 
   const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.storyText.toLowerCase().includes(searchTerm.toLowerCase())
+    (project.storyText && project.storyText.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  if (!isLoaded || isLoading) {
+    return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><LoadingSpinner text="Loading your projects..." size={48} /></div>;
+  }
+
+  if (error) {
+     return <div className="text-center py-10 text-destructive">{error}</div>;
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in-0 duration-500">
@@ -79,7 +93,7 @@ export default function LibraryPage() {
       {filteredProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in-50 slide-in-from-bottom-10 duration-500">
           {filteredProjects.map(project => (
-            <ProjectCard key={project.id} project={project} onDelete={() => handleDeleteProject(project.id)} />
+            <ProjectCard key={project.id} project={project} onDelete={() => handleDeleteProject(project)} />
           ))}
         </div>
       ) : (
@@ -105,7 +119,7 @@ export default function LibraryPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Project: "{projectToDelete.title}"?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. All data associated with this project will be permanently removed.
+                This action cannot be undone. All data associated with this project will be permanently removed from the database.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

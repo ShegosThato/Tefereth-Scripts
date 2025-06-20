@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
         hostname: 'cdn.genkit.dev',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+        port: '',
+        pathname: '/**',
       }
     ],
     dangerouslyAllowSVG: true,

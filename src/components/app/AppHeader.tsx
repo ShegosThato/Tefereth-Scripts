@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export function AppHeader() {
   return (
@@ -17,14 +18,17 @@ export function AppHeader() {
           <span className="drop-shadow-sm">Tefereth Scripts</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
-          <nav className="hidden md:flex items-center gap-1">
-            <Button variant="ghost" asChild className="font-medium hover:text-primary">
-              <Link href="/">New Story</Link>
-            </Button>
-            <Button variant="ghost" asChild className="font-medium hover:text-primary">
-              <Link href="/library">Library</Link>
-            </Button>
-          </nav>
+            <SignedIn>
+                <UserButton afterSignOutUrl='/' />
+            </SignedIn>
+            <SignedOut>
+                <Button variant="ghost" asChild className="font-medium hover:text-primary">
+                  <Link href="/sign-in">Sign In</Link>
+                </Button>
+                <Button asChild className="font-medium">
+                  <Link href="/sign-up">Sign Up</Link>
+                </Button>
+            </SignedOut>
           <ThemeToggle />
         </div>
       </div>

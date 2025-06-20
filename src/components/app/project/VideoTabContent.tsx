@@ -2,38 +2,40 @@
 'use client';
 
 import { useState } from 'react';
-import type { Project } from '@/lib/types';
+import { useProjectStore } from '@/stores/project-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/app/LoadingSpinner';
 import { Film, Download, Share2, PlayCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { updateProject as saveProjectDetails } from '@/lib/project-store';
 
-interface VideoTabContentProps {
-  project: Project;
-  onProjectUpdate: (updatedProjectData: Partial<Project>) => void;
-}
+interface VideoTabContentProps {}
 
-export function VideoTabContent({ project, onProjectUpdate }: VideoTabContentProps) {
+export function VideoTabContent({}: VideoTabContentProps) {
+  const { currentProject: project, updateCurrentProject, isLoading, setLoading } = useProjectStore();
   const [isAssembling, setIsAssembling] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | undefined>(project.videoUrl);
   const { toast } = useToast();
+  
+  if (!project) return <LoadingSpinner />;
 
-  const handleAssembleVideo = () => {
+  const videoUrl = project.videoUrl;
+
+  const handleAssembleVideo = async () => {
     if (!project.generatedScenes || project.generatedScenes.length === 0) {
       toast({ title: "No Scenes Available", description: "Please generate scenes before assembling the video.", variant: "destructive"});
       return;
     }
     setIsAssembling(true);
+    setLoading(true);
     toast({ title: "Video Assembly Started", description: "This might take a few moments..." });
     
-    setTimeout(() => {
+    // This is a mock assembly process
+    setTimeout(async () => {
       const mockVideoUrl = `https://placehold.co/1280x720.mp4?text=Video+for+${encodeURIComponent(project.title)}`;
-      onProjectUpdate({ videoUrl: mockVideoUrl });
-      setVideoUrl(mockVideoUrl);
+      await updateCurrentProject({ videoUrl: mockVideoUrl });
       setIsAssembling(false);
+      setLoading(false);
       toast({ title: "Video Assembled!", description: "Your video is ready for preview and export." });
     }, 3000 + Math.random() * 2000); 
   };
@@ -61,7 +63,7 @@ export function VideoTabContent({ project, onProjectUpdate }: VideoTabContentPro
                 <p>No scenes have been generated for this project yet. Please go to the "Storyboard & Scenes" tab to generate scenes first.</p>
             </div>
           ) : !videoUrl ? (
-            <Button onClick={handleAssembleVideo} disabled={isAssembling} size="lg" className="w-full sm:w-auto text-base px-8 py-3 shadow-md hover:shadow-lg">
+            <Button onClick={handleAssembleVideo} disabled={isAssembling || isLoading} size="lg" className="w-full sm:w-auto text-base px-8 py-3 shadow-md hover:shadow-lg">
               {isAssembling ? (
                 <LoadingSpinner text="Assembling Video..." />
               ) : (

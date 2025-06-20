@@ -2,10 +2,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { Project, Scene as AppScene } from '@/lib/types';
+import type { Scene, StoryboardScene } from '@/lib/types';
 import { visualStyles } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useProjectStore } from '@/stores/project-store';
 import { generateStoryboard, type GenerateStoryboardInput } from '@/ai/flows/generate-storyboard';
 import { generateScenes, type GenerateScenesInput } from '@/ai/flows/generate-scenes';
 import { VisualStyleSelector } from './VisualStyleSelector';
@@ -14,43 +15,57 @@ import { LoadingSpinner } from '@/components/app/LoadingSpinner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wand2, ImagePlay, Clapperboard, Check, AlertTriangle, Palette } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
-interface StoryboardTabContentProps {
-  project: Project;
-  onProjectUpdate: (updatedProjectData: Partial<Project>) => void;
-}
 
-export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTabContentProps) {
+export function StoryboardTabContent() {
   const { toast } = useToast();
-  const [isLoadingStoryboard, setIsLoadingStoryboard] = useState(false);
-  const [isLoadingScenes, setIsLoadingScenes] = useState(false);
-  const [selectedVisualStyleId, setSelectedVisualStyleId] = useState<string | undefined>(project.visualStyle);
+  const { 
+    currentProject: project, 
+    updateCurrentProject,
+    setLoading, 
+    isLoading 
+  } = useProjectStore();
+
+  const [isGeneratingStoryboard, setIsGeneratingStoryboard] = useState(false);
+  const [isGeneratingScenes, setIsGeneratingScenes] = useState(false);
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  if (!project) return <LoadingSpinner text="Loading project data..."/>;
 
   const handleGenerateStoryboard = async () => {
     if (!project.analysis) {
       toast({ title: "Analysis Missing", description: "Story analysis is required to generate a storyboard.", variant: "destructive" });
       return;
     }
-    setIsLoadingStoryboard(true);
+    setIsGeneratingStoryboard(true);
+    setLoading(true);
     try {
       const input: GenerateStoryboardInput = {
         storyAnalysis: JSON.stringify(project.analysis),
         userPrompts: `Generate a storyboard for the story titled "${project.title}". Focus on key visual moments.`,
       };
       const storyboardResult = await generateStoryboard(input);
-      onProjectUpdate({ storyboard: storyboardResult });
+      await updateCurrentProject({ storyboard: storyboardResult });
       toast({ title: "Storyboard Generated!", description: "AI has created a visual storyboard." });
     } catch (error) {
       console.error("Error generating storyboard:", error);
       toast({ title: "Storyboard Error", description: "Failed to generate storyboard. Check console for details.", variant: "destructive" });
     } finally {
-      setIsLoadingStoryboard(false);
+      setIsGeneratingStoryboard(false);
+      setLoading(false);
     }
   };
 
-  const handleSelectStyle = (styleId: string) => {
-    setSelectedVisualStyleId(styleId);
-    onProjectUpdate({ visualStyle: styleId });
+  const handleSelectStyle = async (styleId: string) => {
+    await updateCurrentProject({ visualStyle: styleId });
   };
 
   const handleGenerateScenes = async () => {
@@ -58,18 +73,19 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
       toast({ title: "Storyboard Required", description: "Please generate a storyboard first.", variant: "destructive" });
       return;
     }
-    if (!selectedVisualStyleId) {
+    if (!project.visualStyle) {
       toast({ title: "Visual Style Required", description: "Please select a visual style.", variant: "destructive" });
       return;
     }
 
-    const style = visualStyles.find(s => s.id === selectedVisualStyleId);
+    const style = visualStyles.find(s => s.id === project.visualStyle);
     if (!style) {
         toast({ title: "Invalid Style", description: "Selected visual style not found.", variant: "destructive" });
         return;
     }
 
-    setIsLoadingScenes(true);
+    setIsGeneratingScenes(true);
+    setLoading(true);
     try {
       const storyboardDescription = project.storyboard.map(s => s.sceneDescription).join('\n');
       const input: GenerateScenesInput = {
@@ -78,24 +94,90 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
       };
       const generatedScenesResult = await generateScenes(input);
       
-      const appScenes: AppScene[] = generatedScenesResult.scenes.map(aiScene => ({
+      const appScenes: Scene[] = generatedScenesResult.scenes.map(aiScene => ({
         sceneDescription: aiScene.sceneDescription,
         imageUrl: aiScene.imageUrl, 
       }));
 
-      onProjectUpdate({ generatedScenes: appScenes });
+      await updateCurrentProject({ generatedScenes: appScenes });
       toast({ title: "Scenes Generated!", description: "AI has created visual scenes for your storyboard." });
     } catch (error) {
       console.error("Error generating scenes:", error);
       toast({ title: "Scene Generation Error", description: "Failed to generate scenes. Check console for details.", variant: "destructive" });
     } finally {
-      setIsLoadingScenes(false);
+      setIsGeneratingScenes(false);
+      setLoading(false);
     }
   };
 
+  const handleDescriptionSave = async (index: number, newDescription: string, type: 'storyboard' | 'generated') => {
+    if (type === 'storyboard' && project.storyboard) {
+      const updatedStoryboard = [...project.storyboard];
+      updatedStoryboard[index].sceneDescription = newDescription;
+      await updateCurrentProject({ storyboard: updatedStoryboard });
+    } else if (type === 'generated' && project.generatedScenes) {
+      const updatedScenes = [...project.generatedScenes];
+      updatedScenes[index].sceneDescription = newDescription;
+      await updateCurrentProject({ generatedScenes: updatedScenes });
+    }
+    toast({ title: "Scene Updated", description: "Scene description has been saved."});
+  };
+
+  const handleSceneRegenerate = async (index: number) => {
+    if (!project.generatedScenes || !project.visualStyle) {
+        toast({ title: "Data missing", description: "Cannot regenerate without scenes and a visual style.", variant: "destructive"});
+        return;
+    }
+    const style = visualStyles.find(s => s.id === project.visualStyle);
+    if (!style) return;
+
+    setLoading(true);
+    try {
+        const sceneToRegen = project.generatedScenes[index];
+        const input: GenerateScenesInput = {
+            storyboardDescription: sceneToRegen.sceneDescription,
+            visualStyle: style.promptFragment,
+        };
+        const result = await generateScenes(input);
+        if (result.scenes && result.scenes.length > 0) {
+            const updatedScenes = [...project.generatedScenes];
+            updatedScenes[index] = {
+              sceneDescription: result.scenes[0].sceneDescription,
+              imageUrl: result.scenes[0].imageUrl,
+            };
+            await updateCurrentProject({ generatedScenes: updatedScenes });
+            toast({ title: "Scene Regenerated", description: `Scene ${index + 1} has been updated with a new image.`});
+        }
+    } catch(error) {
+        console.error("Error regenerating scene:", error);
+        toast({ title: "Regeneration Error", description: "Could not regenerate the scene.", variant: "destructive"});
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  function handleDragEnd(event: DragEndEvent, type: 'storyboard' | 'generated') {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+        const items = type === 'storyboard' ? project.storyboard : project.generatedScenes;
+        if (!items) return;
+        
+        const oldIndex = items.findIndex((item, i) => (item.sceneDescription + i) === active.id);
+        const newIndex = items.findIndex((item, i) => (item.sceneDescription + i) === over.id);
+
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        if (type === 'storyboard') {
+            updateCurrentProject({ storyboard: newOrder as StoryboardScene[] });
+        } else {
+            updateCurrentProject({ generatedScenes: newOrder as Scene[] });
+        }
+    }
+  }
+
+
   const currentStoryboard = project.storyboard || [];
   const currentGeneratedScenes = project.generatedScenes || [];
-  const canGenerateScenes = currentStoryboard.length > 0 && selectedVisualStyleId;
+  const canGenerateScenes = currentStoryboard.length > 0 && project.visualStyle;
 
   return (
     <div className="space-y-10">
@@ -107,13 +189,13 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {currentStoryboard.length > 0
-              ? `Your storyboard has ${currentStoryboard.length} scenes. You can regenerate it if needed.`
+              ? `Your storyboard has ${currentStoryboard.length} scenes. You can regenerate it, edit descriptions, or drag to reorder.`
               : "Let AI create a visual storyboard from your story analysis."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={handleGenerateStoryboard} disabled={isLoadingStoryboard || !project.analysis} size="lg" className="text-base px-6 py-3 shadow-md hover:shadow-lg">
-            {isLoadingStoryboard ? (
+          <Button onClick={handleGenerateStoryboard} disabled={isGeneratingStoryboard || isLoading || !project.analysis} size="lg" className="text-base px-6 py-3 shadow-md hover:shadow-lg">
+            {isGeneratingStoryboard ? (
               <LoadingSpinner text="Generating Storyboard..." />
             ) : (
               <>
@@ -125,11 +207,23 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
           {currentStoryboard.length > 0 && (
             <div className="mt-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
               <h3 className="text-xl font-semibold mb-4 text-foreground">Storyboard Scenes ({currentStoryboard.length}):</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentStoryboard.map((scene, index) => (
-                  <SceneCard key={`storyboard-${project.id}-${index}`} scene={scene} index={index} type="storyboard"/>
-                ))}
-              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, 'storyboard')}>
+                <SortableContext items={currentStoryboard.map((s, i) => s.sceneDescription + i)} strategy={verticalListSortingStrategy}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {currentStoryboard.map((scene, index) => (
+                          <SceneCard 
+                            key={`storyboard-${project.id}-${index}`} 
+                            scene={scene} 
+                            index={index} 
+                            type="storyboard"
+                            onDescriptionSave={(desc) => handleDescriptionSave(index, desc, 'storyboard')}
+                            onRegenerate={()=>{}} // No regen for storyboard
+                            isSorting={true}
+                          />
+                        ))}
+                    </div>
+                </SortableContext>
+              </DndContext>
             </div>
           )}
         </CardContent>
@@ -150,7 +244,7 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <VisualStyleSelector selectedStyleId={selectedVisualStyleId} onSelectStyle={handleSelectStyle} />
+              <VisualStyleSelector selectedStyleId={project.visualStyle} onSelectStyle={handleSelectStyle} />
             </CardContent>
           </Card>
           
@@ -164,19 +258,19 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
               </CardTitle>
               <CardDescription className="text-muted-foreground">
                 {currentGeneratedScenes.length > 0 
-                  ? `You have ${currentGeneratedScenes.length} scenes generated with the selected style.`
+                  ? `You have ${currentGeneratedScenes.length} scenes generated with the selected style. Edit, reorder, or regenerate them.`
                   : "Apply the chosen style to generate unique images for each storyboard scene."}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!selectedVisualStyleId && (
+              {!project.visualStyle && (
                 <div className="mb-4 p-4 bg-yellow-500/10 text-yellow-800 dark:bg-yellow-700/20 dark:text-yellow-300 border border-yellow-600/30 dark:border-yellow-500/40 rounded-md flex items-center gap-2 text-sm shadow">
                   <AlertTriangle className="h-5 w-5" />
                   Please select a visual style above to enable scene generation.
                 </div>
               )}
-              <Button onClick={handleGenerateScenes} disabled={isLoadingScenes || !canGenerateScenes} size="lg" className="text-base px-6 py-3 shadow-md hover:shadow-lg">
-                {isLoadingScenes ? (
+              <Button onClick={handleGenerateScenes} disabled={isGeneratingScenes || isLoading || !canGenerateScenes} size="lg" className="text-base px-6 py-3 shadow-md hover:shadow-lg">
+                {isGeneratingScenes ? (
                   <LoadingSpinner text="Generating Scenes..." />
                 ) : (
                   <>
@@ -188,11 +282,23 @@ export function StoryboardTabContent({ project, onProjectUpdate }: StoryboardTab
               {currentGeneratedScenes.length > 0 && (
                 <div className="mt-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
                   <h3 className="text-xl font-semibold mb-4 text-foreground">Generated Scenes ({currentGeneratedScenes.length}):</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {currentGeneratedScenes.map((scene, index) => (
-                      <SceneCard key={`generated-${project.id}-${index}`} scene={scene} index={index} type="generated"/>
-                    ))}
-                  </div>
+                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, 'generated')}>
+                    <SortableContext items={currentGeneratedScenes.map((s, i) => s.sceneDescription + i)} strategy={verticalListSortingStrategy}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {currentGeneratedScenes.map((scene, index) => (
+                          <SceneCard 
+                            key={`generated-${project.id}-${index}`} 
+                            scene={scene} 
+                            index={index} 
+                            type="generated"
+                            onDescriptionSave={(desc) => handleDescriptionSave(index, desc, 'generated')}
+                            onRegenerate={() => handleSceneRegenerate(index)}
+                            isSorting={true}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               )}
             </CardContent>

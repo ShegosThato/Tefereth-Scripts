@@ -3,18 +3,29 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
+import { useProjectStore } from '@/stores/project-store';
 import { StoryInputForm, type StoryFormValues } from '@/components/app/StoryInputForm';
-import { createProject, updateProject } from '@/lib/project-store';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeStory, type AnalyzeStoryInput } from '@/ai/flows/analyze-story';
 
 export default function NewProjectPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { isSignedIn, userId } = useAuth();
+  const { addProject, isLoading, error } = useProjectStore();
 
   const handleSubmit = async (values: StoryFormValues) => {
-    setIsLoading(true);
+    if (!isSignedIn) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in or create an account to start a new project.",
+        variant: "destructive",
+      });
+      router.push('/sign-in');
+      return;
+    }
+
     let storyContent = values.storyText;
 
     if (!storyContent || storyContent.trim().length === 0) {
@@ -23,34 +34,39 @@ export default function NewProjectPage() {
             description: "Please provide story text or upload a supported document (.txt, .md) with content.",
             variant: "destructive",
         });
-        setIsLoading(false);
         return;
     }
     
-    if (storyContent.length > 50000) { // Zod schema also handles this, but belt-and-suspenders
+    if (storyContent.length > 50000) { 
         toast({
             title: "Story Too Long",
             description: "The story content exceeds the 50,000 character limit. Please shorten it or use a smaller file.",
             variant: "destructive",
         });
-        setIsLoading(false);
         return;
     }
 
     try {
-      const newProject = createProject(values.title, storyContent);
-      
       const analysisInput: AnalyzeStoryInput = { storyText: storyContent };
       const analysisResult = await analyzeStory(analysisInput);
 
-      updateProject(newProject.id, { analysis: analysisResult });
-
-      toast({
-        title: "Project Created & Analyzed!",
-        description: "Your story analysis is complete. Redirecting to your project...",
+      const newProjectId = await addProject({
+          title: values.title,
+          storyText: storyContent,
+          analysis: analysisResult,
       });
-      router.push(`/project/${newProject.id}`);
-    } catch (error) {
+
+      if (newProjectId) {
+          toast({
+            title: "Project Created & Analyzed!",
+            description: "Your story analysis is complete. Redirecting to your project...",
+          });
+          router.push(`/project/${newProjectId}`);
+      } else {
+        throw new Error("Failed to create project and get an ID back.");
+      }
+
+    } catch (error: any) {
       console.error("Error creating project or analyzing story:", error);
       let errorMessage = "An unexpected error occurred. Please try again.";
       if (error instanceof Error) {
@@ -58,8 +74,10 @@ export default function NewProjectPage() {
           errorMessage = "AI processing limit reached. Please try again later.";
         } else if (error.message.includes("SAFETY")) {
             errorMessage = "The story content was blocked by AI safety filters. Please revise your story.";
-        } else if (error.message.includes("10000 characters")) { // Specific error from analyzeStory flow
+        } else if (error.message.includes("10000 characters")) { 
             errorMessage = "Story text for analysis cannot exceed 10,000 characters. Please shorten it.";
+        } else {
+            errorMessage = error.message;
         }
       }
       toast({
@@ -67,8 +85,6 @@ export default function NewProjectPage() {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

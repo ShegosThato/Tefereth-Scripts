@@ -11,14 +11,11 @@ import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
   project: Project;
-  onDelete: (projectId: string) => void;
+  onDelete: () => void;
 }
 
 export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const getProjectStatus = () => {
-    // Colors for badges should be reconsidered with the new R/W/B theme.
-    // For now, let's keep variants and rely on theme to color them.
-    // Destructive variant for "Draft" might be too strong, using outline instead.
     if (project.videoUrl) return { text: "Video Ready", icon: <CheckCircle className="h-4 w-4 mr-1.5 text-green-500 dark:text-green-400" />, variant: "default", className: "bg-green-500/10 text-green-700 dark:bg-green-700/20 dark:text-green-300 border-green-500/30" };
     if (project.generatedScenes && project.generatedScenes.length > 0) return { text: "Scenes Generated", icon: <ListChecks className="h-4 w-4 mr-1.5 text-blue-500 dark:text-blue-400" />, variant: "secondary", className: "bg-blue-500/10 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300 border-blue-500/30" };
     if (project.storyboard && project.storyboard.length > 0) return { text: "Storyboarded", icon: <ListChecks className="h-4 w-4 mr-1.5 text-purple-500 dark:text-purple-400" />, variant: "outline", className: "bg-purple-500/10 text-purple-700 dark:bg-purple-700/20 dark:text-purple-300 border-purple-500/30"};
@@ -75,7 +72,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
             variant="ghost" 
             size="icon" 
             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 transition-colors duration-200" 
-            onClick={() => onDelete(project.id)} 
+            onClick={onDelete} 
             aria-label={`Delete project: ${project.title}`}
         >
           <Trash2 className="h-5 w-5" />

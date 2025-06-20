@@ -95,6 +95,46 @@
     --sidebar-border: 0 0% 28%;
     --sidebar-ring: 0 80% 62%;
   }
+
+  /* Custom Clerk Styles */
+  .cl-rootBox {
+    --cl-font-color: hsl(var(--foreground));
+    --cl-color-primary: hsl(var(--primary));
+  }
+  .cl-card {
+     background-color: hsl(var(--card)) !important;
+     box-shadow: none !important;
+     border: 1px solid hsl(var(--border));
+  }
+  .cl-headerTitle, .cl-headerSubtitle, .cl-socialButtonsBlockButtonText, .cl-footerActionText, .cl-identityPreviewText, .cl-formFieldLabel, .cl-formButtonPrimary, .cl-socialButtonsProviderIcon, .cl-dividerText, .cl-footerActionLink {
+    color: hsl(var(--foreground)) !important;
+  }
+  .cl-formFieldInput {
+     background-color: hsl(var(--input)) !important;
+     color: hsl(var(--foreground));
+     border-color: hsl(var(--border));
+  }
+  .cl-formButtonPrimary {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+  .cl-userButtonPopoverCard {
+    background-color: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border));
+  }
+  .cl-userButtonPopoverMain, .cl-userButtonPopoverActions, .cl-userButtonPopoverFooter {
+     background-color: hsl(var(--popover)) !important;
+  }
+  .cl-userButtonPopoverActionButton, .cl-userButtonPopoverActionButton__username {
+    color: hsl(var(--popover-foreground)) !important;
+  }
+  .cl-userButtonPopoverActionButton:hover {
+     background-color: hsl(var(--accent)) !important;
+     color: hsl(var(--accent-foreground)) !important;
+  }
 }
 
 @layer base {
