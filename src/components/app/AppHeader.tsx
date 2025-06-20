@@ -18,17 +18,20 @@ export function AppHeader() {
           <span className="drop-shadow-sm">Tefereth Scripts</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
-            <SignedIn>
-                <UserButton afterSignOutUrl='/' />
-            </SignedIn>
-            <SignedOut>
-                <Button variant="ghost" asChild className="font-medium hover:text-primary">
-                  <Link href="/sign-in">Sign In</Link>
-                </Button>
-                <Button asChild className="font-medium">
-                  <Link href="/sign-up">Sign Up</Link>
-                </Button>
-            </SignedOut>
+          <SignedIn>
+            <Button asChild>
+              <Link href="/new-project">New Project</Link>
+            </Button>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
+            <Button variant="ghost" asChild className="font-medium hover:text-primary">
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+            <Button asChild className="font-medium">
+              <Link href="/sign-up">Sign Up</Link>
+            </Button>
+          </SignedOut>
           <ThemeToggle />
         </div>
       </div>

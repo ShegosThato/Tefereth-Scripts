@@ -3,97 +3,40 @@
 
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { analyzeStory, type AnalyzeStoryInput } from '@/ai/flows/analyze-story';
-import { StoryInputForm, type StoryFormValues } from '@/components/app/StoryInputForm';
-import { useToast } from '@/hooks/use-toast';
-import { useProjectStore } from '@/stores/project-store';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
-export default function NewProjectPage() {
+export default function LandingPage() {
+  const { isSignedIn } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
-  const { isSignedIn, userId } = useAuth();
-  const { addProject, isLoading } = useProjectStore();
 
-  const handleSubmit = async (values: StoryFormValues) => {
-    if (!isSignedIn || !userId) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please sign in or create an account to start a new project.',
-        variant: 'destructive',
-      });
-      router.push('/sign-in');
-      return;
-    }
+  const handleGetStarted = () => {
+    router.push('/sign-in');
+  };
 
-    let storyContent = values.storyText;
-
-    // Also check for whitespace-only content
-    if (!storyContent || storyContent.trim().length === 0) {
-      toast({
-        title: 'Missing Story Content',
-        description: 'Please provide story text or upload a supported document (.txt, .md) with content.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (storyContent.length > 50000) {
-      toast({
-        title: 'Story Too Long',
-        description: 'The story content exceeds the 50,000 character limit. Please shorten it or use a smaller file.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      // Use the trimmed content for analysis to avoid issues with leading/trailing whitespace
-      const analysisInput: AnalyzeStoryInput = { storyText: storyContent.trim() };
-      const analysisResult = await analyzeStory(analysisInput);
-
-      const newProjectId = await addProject(
-        {
-          title: values.title,
-          storyText: storyContent,
-          analysis: analysisResult,
-        },
-        userId
-      );
-
-      if (newProjectId) {
-        toast({
-          title: 'Project Created & Analyzed!',
-          description: 'Your story analysis is complete. Redirecting to your project...',
-        });
-        router.push(`/project/${newProjectId}`);
-      } else {
-        throw new Error('Failed to create project and get an ID back.');
-      }
-    } catch (error: any) {
-      console.error('Error creating project or analyzing story:', error);
-      let errorMessage = 'An unexpected error occurred. Please try again.';
-      if (error instanceof Error) {
-        if (error.message.includes('quota') || error.message.includes('limit')) {
-          errorMessage = 'AI processing limit reached. Please try again later.';
-        } else if (error.message.includes('SAFETY')) {
-          errorMessage = 'The story content was blocked by AI safety filters. Please revise your story.';
-        } else if (error.message.includes('10000 characters')) {
-          errorMessage = 'Story text for analysis cannot exceed 10,000 characters. Please shorten it.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      toast({
-        title: 'Operation Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    }
+  const handleGoToLibrary = () => {
+    router.push('/library');
   };
 
   return (
-    <div className="py-8 md:py-12 animate-in fade-in-0 duration-500">
-      <StoryInputForm onSubmit={handleSubmit} isLoading={isLoading} />
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center px-4 animate-in fade-in-50 duration-500">
+      <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4">
+        Bring Your Stories to Life
+      </h1>
+      <p className="max-w-2xl text-lg md:text-xl text-muted-foreground mb-8">
+        Turn your scripts and stories into stunning visual experiences with AI-powered storyboarding and video creation.
+      </p>
+      {isSignedIn ? (
+        <Button size="lg" onClick={handleGoToLibrary}>
+          Go to Your Library
+          <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      ) : (
+        <Button size="lg" onClick={handleGetStarted}>
+          Get Started for Free
+          <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      )}
     </div>
   );
 }
