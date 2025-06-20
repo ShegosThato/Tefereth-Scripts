@@ -1,6 +1,8 @@
+
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from './ThemeToggle'; // Import ThemeToggle
 
 export function AppHeader() {
   return (
@@ -10,14 +12,17 @@ export function AppHeader() {
           <Sparkles className="h-7 w-7 text-primary" />
           StorySpark
         </Link>
-        <nav className="hidden md:flex items-center gap-2">
-          <Button variant="ghost" asChild>
-            <Link href="/">New Story</Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/library">Library</Link>
-          </Button>
-        </nav>
+        <div className="flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-2">
+            <Button variant="ghost" asChild>
+              <Link href="/">New Story</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/library">Library</Link>
+            </Button>
+          </nav>
+          <ThemeToggle /> 
+        </div>
       </div>
     </header>
   );
