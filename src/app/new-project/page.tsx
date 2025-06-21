@@ -10,10 +10,22 @@ import { useProjectStore } from '@/stores/project-store';
 export default function NewProjectPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { isSignedIn, userId } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const { addProject, isLoading } = useProjectStore();
 
   const handleSubmit = async (values: StoryFormValues) => {
+    if (!isLoaded) {
+      // Clerk is still loading, it's too early to know the auth state.
+      // Usually, UI would show a global loading spinner or skeleton.
+      // Or, disable the form submit button until isLoaded is true.
+      // For now, we can show a toast and prevent submission.
+      toast({
+        title: 'Verifying session...',
+        description: 'Please wait a moment while we check your authentication status.',
+      });
+      return;
+    }
+
     if (!isSignedIn || !userId) {
       toast({
         title: 'Authentication Required',

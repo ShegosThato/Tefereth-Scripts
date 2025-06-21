@@ -76,7 +76,7 @@ export default function LibraryPage() {
     }
 
     if (error) {
-      return <div className="py-10 text-center text-destructive">{error}</div>;
+      return <div className="py-10 text-center text-destructive">{error.message}</div>;
     }
     
     // This state is for after loading, when the user has no projects.

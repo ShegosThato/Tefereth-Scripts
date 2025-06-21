@@ -76,17 +76,45 @@ export default function ProjectPage() {
     );
   }
 
+  // Specific error handling based on error code from the store
   if (error) {
-    return <div className="py-10 text-center text-destructive">{error}</div>;
-  }
-
-  if (!project) {
+    let errorMessage = error.message;
+    if (error.code === "NOT_FOUND") {
+      errorMessage = "This project could not be found. It might have been deleted.";
+    } else if (error.code === "PERMISSION_DENIED") {
+      errorMessage = "You do not have permission to view this project.";
+    }
     return (
-      <div className="py-10 text-center text-muted-foreground">
-        Project data could not be loaded. It might not exist or you may not have permission to view it. <Link href="/library" className="text-primary hover:underline">Return to Library</Link>
+      <div className="py-10 text-center">
+        <p className="text-destructive text-lg">{errorMessage}</p>
+        <Button asChild variant="link" className="mt-4">
+          <Link href="/library">Return to Library</Link>
+        </Button>
       </div>
     );
   }
+
+  // This case should ideally be covered by error.code === "NOT_FOUND" if fetchProject logic is complete
+  // but as a fallback:
+  if (!project && !isLoading) { // ensure it's not just loading
+    return (
+      <div className="py-10 text-center text-muted-foreground">
+        Project data could not be loaded. <Link href="/library" className="text-primary hover:underline">Return to Library</Link>
+      </div>
+    );
+  }
+
+  // If project is still null after loading and no error, it's an unexpected state,
+  // but to prevent crashing, we can show a generic message or redirect.
+  // For now, the above !project && !isLoading check handles it.
+  // If project is null but isLoading is true, the loading spinner above handles it.
+  if (!project) {
+     // This should ideally not be reached if isLoading and error states are handled correctly.
+     // The loading spinner or error message should be displayed.
+     // If it is reached, it means project is null, not loading, and no error is set.
+    return null; // Or a more graceful fallback
+  }
+
 
   return (
     <div className="space-y-8 animate-in fade-in-0 duration-500">
